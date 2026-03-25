@@ -55,14 +55,20 @@ export async function POST(request: NextRequest) {
 
   if (vehErr) return NextResponse.json({ error: vehErr.message }, { status: 500 });
 
+  // Remap form field names → DB column names
+  const { date, time, ...apptRest } = appointment;
+  const apptPayload = {
+    ...apptRest,
+    scheduled_date: date,
+    scheduled_time: time,
+    customer_id: cust.id,
+    vehicle_id: veh.id,
+  };
+
   // Create appointment
   const { data: appt, error: apptErr } = await supabaseAdmin
     .from('acq_appointments')
-    .insert({
-      ...appointment,
-      customer_id: cust.id,
-      vehicle_id: veh.id,
-    })
+    .insert(apptPayload)
     .select(
       '*, customer:acq_customers(*), vehicle:acq_vehicles(*), agent:acq_agents(*)'
     )
