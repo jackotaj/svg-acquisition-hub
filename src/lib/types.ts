@@ -83,8 +83,8 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export const BASE_LOCATION = {
-  lat: 39.7173,
-  lng: -84.0644,
-  label: 'SVG Beavercreek',
-  address: '3025 Colonel Glenn Hwy, Beavercreek, OH 45431',
+  lat: 39.7227107,
+  lng: -84.0644755,
+  label: 'Acquisition Base',
+  address: '3415 Seajay Dr, Beavercreek, OH 45430',
 };

@@ -72,7 +72,7 @@ export default function NewAppointmentForm() {
   useEffect(() => {
     if (step !== 2 || !appt.address || !appt.city) return;
     const destAddr = encodeURIComponent(`${appt.address}, ${appt.city}, ${appt.state} ${appt.zip}`);
-    const originAddr = encodeURIComponent('3620 Pentagon Blvd, Beavercreek, OH 45431'); // BCK base
+    const originAddr = encodeURIComponent('3415 Seajay Dr, Beavercreek, OH 45430'); // acquisition base
     setTravelLoading(true);
     setTravelTime(null);
     fetch(`/api/travel-time?origin=${originAddr}&dest=${destAddr}`)
