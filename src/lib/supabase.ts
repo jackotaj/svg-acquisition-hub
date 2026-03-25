@@ -1,11 +1,41 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
+let _supabase: SupabaseClient | null = null;
+let _supabaseAdmin: SupabaseClient | null = null;
 
-// Client-side Supabase (anon key)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+  return _supabase;
+}
 
-// Server-side Supabase (service key) — use in API routes only
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+export function getSupabaseAdmin(): SupabaseClient {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
+  }
+  return _supabaseAdmin;
+}
+
+// Legacy exports for compatibility
+export const supabase = new Proxy({} as SupabaseClient, {
+  get: (_target, prop) => {
+    const client = getSupabase();
+    const val = (client as Record<string | symbol, unknown>)[prop];
+    return typeof val === 'function' ? val.bind(client) : val;
+  },
+});
+
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get: (_target, prop) => {
+    const client = getSupabaseAdmin();
+    const val = (client as Record<string | symbol, unknown>)[prop];
+    return typeof val === 'function' ? val.bind(client) : val;
+  },
+});
