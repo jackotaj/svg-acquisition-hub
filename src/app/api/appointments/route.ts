@@ -37,10 +37,19 @@ export async function POST(request: NextRequest) {
 
   if (custErr) return NextResponse.json({ error: custErr.message }, { status: 500 });
 
+  // Coerce numeric fields before insert
+  const vehiclePayload = {
+    ...vehicle,
+    customer_id: cust.id,
+    mileage: vehicle.mileage ? parseInt(String(vehicle.mileage).replace(/\D/g, ''), 10) || null : null,
+    estimated_value: vehicle.estimated_value ? parseInt(String(vehicle.estimated_value).replace(/\D/g, ''), 10) || null : null,
+    offer_amount: vehicle.offer_amount ? parseInt(String(vehicle.offer_amount).replace(/\D/g, ''), 10) || null : null,
+  };
+
   // Create vehicle
   const { data: veh, error: vehErr } = await supabaseAdmin
     .from('acq_vehicles')
-    .insert({ ...vehicle, customer_id: cust.id })
+    .insert(vehiclePayload)
     .select()
     .single();
 

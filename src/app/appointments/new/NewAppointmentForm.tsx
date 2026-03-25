@@ -96,11 +96,11 @@ export default function NewAppointmentForm() {
       if (data.id) {
         router.push(`/appointments/${data.id}`);
       } else {
-        alert('Error creating appointment. Please try again.');
+        alert(`Error: ${data.error || 'Unknown error — please try again.'}`);
         setSubmitting(false);
       }
-    } catch {
-      alert('Network error. Please try again.');
+    } catch (e) {
+      alert(`Network error: ${e instanceof Error ? e.message : 'Please try again.'}`);
       setSubmitting(false);
     }
   };
