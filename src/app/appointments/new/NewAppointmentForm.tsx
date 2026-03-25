@@ -44,6 +44,8 @@ export default function NewAppointmentForm() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [travelTime, setTravelTime] = useState<{ minutes: number; estimated: boolean } | null>(null);
+  const [travelLoading, setTravelLoading] = useState(false);
 
   const [customer, setCustomer] = useState({
     first_name: '', last_name: '', phone: '', email: '', notes: '',
@@ -65,6 +67,20 @@ export default function NewAppointmentForm() {
       .then(r => r.json())
       .then(data => setAgents(Array.isArray(data) ? data : []));
   }, []);
+
+  // Fetch real travel time when on schedule step with an address
+  useEffect(() => {
+    if (step !== 2 || !appt.address || !appt.city) return;
+    const destAddr = encodeURIComponent(`${appt.address}, ${appt.city}, ${appt.state} ${appt.zip}`);
+    const originAddr = encodeURIComponent('3620 Pentagon Blvd, Beavercreek, OH 45431'); // BCK base
+    setTravelLoading(true);
+    setTravelTime(null);
+    fetch(`/api/travel-time?origin=${originAddr}&dest=${destAddr}`)
+      .then(r => r.json())
+      .then(data => setTravelTime(data))
+      .catch(() => setTravelTime({ minutes: 25, estimated: true }))
+      .finally(() => setTravelLoading(false));
+  }, [step, appt.address, appt.city, appt.state, appt.zip]);
 
   const selectedAgent = agents.find(a => a.id === appt.agent_id);
 
@@ -295,7 +311,17 @@ export default function NewAppointmentForm() {
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-              📍 Travel time estimate: ~25 min from previous appointment or Beavercreek base
+              {travelLoading ? (
+                <span>📍 Calculating travel time from Beavercreek base…</span>
+              ) : travelTime ? (
+                <span>
+                  📍 {travelTime.estimated ? 'Estimated' : 'Drive time from Beavercreek base'}:{' '}
+                  <strong>~{travelTime.minutes} min</strong>
+                  {travelTime.estimated && ' (estimate)'}
+                </span>
+              ) : (
+                <span>📍 Enter the appointment address to see drive time</span>
+              )}
             </div>
 
             <div>
