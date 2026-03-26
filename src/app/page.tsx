@@ -96,6 +96,9 @@ export default function Dashboard() {
         <Link href="/map" className="flex items-center gap-2 bg-white text-navy border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
           <MapPin size={16} /> View Map
         </Link>
+        <Link href="/day" className="flex items-center gap-2 bg-white text-navy border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+          <CalendarDays size={16} /> Driver&apos;s Day
+        </Link>
       </div>
 
       {/* Upcoming Appointments grouped by day */}

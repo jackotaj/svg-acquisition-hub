@@ -10,6 +10,7 @@ import {
   Users,
   Menu,
   X,
+  Route,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -17,6 +18,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/map', label: 'Map', icon: MapPin },
+  { href: '/day', label: "Driver's Day", icon: Route },
   { href: '/appointments/new', label: 'New Appointment', icon: Plus },
   { href: '/agents', label: 'Agents', icon: Users },
 ];
