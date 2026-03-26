@@ -210,6 +210,34 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
 
+        {/* Route Map */}
+        {appt.address && appt.city && (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#f97316]" /> Route from Base
+              </div>
+              <a
+                href={`https://www.google.com/maps/dir/3415+Seajay+Dr,+Beavercreek,+OH+45430/${encodeURIComponent(`${appt.address}, ${appt.city}, ${appt.state} ${appt.zip}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#f97316] hover:underline"
+              >
+                Open in Maps ↗
+              </a>
+            </div>
+            <iframe
+              title="Route Map"
+              width="100%"
+              height="260"
+              style={{ border: 0, display: 'block' }}
+              loading="lazy"
+              allowFullScreen
+              src={`https://www.google.com/maps/embed/v1/directions?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&origin=3415+Seajay+Dr,+Beavercreek,+OH+45430&destination=${encodeURIComponent(`${appt.address}, ${appt.city}, ${appt.state} ${appt.zip}`)}&mode=driving`}
+            />
+          </div>
+        )}
+
         {/* Status Progression */}
         {appt.status !== 'cancelled' && appt.status !== 'completed' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">

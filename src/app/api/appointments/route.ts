@@ -29,6 +29,9 @@ export async function GET(request: NextRequest) {
   if (date === 'today') {
     const today = new Date().toISOString().split('T')[0];
     query = query.eq('scheduled_date', today);
+  } else if (date === 'upcoming') {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.gte('scheduled_date', today).not('status', 'in', '("cancelled","completed")');
   } else if (date) {
     query = query.eq('scheduled_date', date);
   }
