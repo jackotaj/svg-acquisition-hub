@@ -2,6 +2,20 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+async function geocodeAddress(address: string, city: string, state: string, zip: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const full = `${address}, ${city}, ${state} ${zip}`.trim();
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(full)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.results?.[0]) {
+      const loc = data.results[0].geometry.location;
+      return { lat: loc.lat, lng: loc.lng };
+    }
+  } catch { /* geocode failure is non-fatal */ }
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   const date = request.nextUrl.searchParams.get('date');
 
@@ -57,12 +71,22 @@ export async function POST(request: NextRequest) {
 
   // Remap form field names → DB column names
   const { date, time, ...apptRest } = appointment;
+
+  // Geocode the appointment address
+  const coords = await geocodeAddress(
+    appointment.address || '',
+    appointment.city || '',
+    appointment.state || '',
+    appointment.zip || ''
+  );
+
   const apptPayload = {
     ...apptRest,
     scheduled_date: date,
     scheduled_time: time,
     customer_id: cust.id,
     vehicle_id: veh.id,
+    ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
   };
 
   // Create appointment

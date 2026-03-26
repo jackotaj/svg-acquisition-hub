@@ -12,7 +12,8 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';
 export default function MapPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markersRef = useRef<any[]>([]);
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -33,22 +34,19 @@ export default function MapPage() {
     setOptions({ key: API_KEY, v: 'weekly' });
     (async () => {
       const { Map } = await importLibrary('maps') as google.maps.MapsLibrary;
-      const { AdvancedMarkerElement } = await importLibrary('marker') as google.maps.MarkerLibrary;
+      await importLibrary('marker');
       if (mapRef.current && !mapInstanceRef.current) {
         mapInstanceRef.current = new Map(mapRef.current, {
           center: { lat: BASE_LOCATION.lat, lng: BASE_LOCATION.lng },
           zoom: 10,
-          mapId: 'svg-acq-map',
         });
-        // Base marker
-        const baseEl = document.createElement('div');
-        baseEl.innerHTML = '⭐';
-        baseEl.style.fontSize = '24px';
-        new AdvancedMarkerElement({
+        // Base marker (star)
+        new google.maps.Marker({
           map: mapInstanceRef.current,
           position: { lat: BASE_LOCATION.lat, lng: BASE_LOCATION.lng },
-          title: 'BCK Base',
-          content: baseEl,
+          title: 'BCK Base — 3415 Seajay Dr',
+          label: { text: '★', color: '#f97316', fontSize: '20px' },
+          zIndex: 999,
         });
         setMapReady(true);
       }
@@ -78,7 +76,7 @@ export default function MapPage() {
     const map = mapInstanceRef.current;
 
     // Clear old markers and polylines
-    markersRef.current.forEach((m) => (m.map = null));
+    markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
     polylinesRef.current.forEach((p) => p.setMap(null));
     polylinesRef.current = [];
@@ -103,23 +101,28 @@ export default function MapPage() {
       appts.sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time));
 
       // Create markers
-      appts.forEach((a) => {
-        const pin = document.createElement('div');
-        pin.style.width = '14px';
-        pin.style.height = '14px';
-        pin.style.borderRadius = '50%';
-        pin.style.backgroundColor = color;
-        pin.style.border = '2px solid white';
-        pin.style.boxShadow = '0 1px 3px rgba(0,0,0,0.3)';
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const marker = new (google.maps as any).marker.AdvancedMarkerElement({
+      appts.forEach((a, idx) => {
+        const marker = new google.maps.Marker({
           map,
           position: { lat: a.lat!, lng: a.lng! },
           title: a.customer
             ? `${a.customer.first_name} ${a.customer.last_name}`
             : 'Appointment',
-          content: pin,
+          label: {
+            text: String(idx + 1),
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: 'bold',
+          },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 14,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+          },
+          zIndex: idx + 1,
         });
         marker.addListener('click', () => setSelectedAppt(a));
         markersRef.current.push(marker);
