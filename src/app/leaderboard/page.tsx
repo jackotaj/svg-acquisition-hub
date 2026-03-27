@@ -1,6 +1,6 @@
 'use client';
-import Link from 'next/link';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface RepStats {
@@ -13,15 +13,13 @@ interface RepStats {
   noPurchase: number;
   pending: number;
   showRate: number;
-  closeRate: number; // purchased / showed
-  contactCloseRate: number; // purchased / total
+  closeRate: number;
   totalRevenue: number;
   avgDeal: number;
   points: number;
   level: { label: string; emoji: string; next: number | null; current: number; color: string };
   onFire: boolean;
   recentAppts: RecentAppt[];
-  leadSources: Record<string, number>;
 }
 
 interface RecentAppt {
@@ -58,11 +56,11 @@ function repColor(name: string) {
 }
 
 function OutcomePill({ outcome, status }: { outcome: string | null; status: string }) {
-  if (outcome === 'purchased')    return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✅ PURCHASED</span>;
-  if (outcome === 'no_purchase')  return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/20">❌ NO PURCHASE</span>;
-  if (outcome === 'no_show')      return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-500/20 text-gray-400 border border-gray-500/20">👻 NO SHOW</span>;
-  if (outcome === 'pending')      return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/20">⏳ PENDING</span>;
-  if (status === 'cancelled')     return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-600/20 text-gray-500 border border-gray-600/20">🚫 CANCELED</span>;
+  if (outcome === 'purchased')   return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✅ PURCHASED</span>;
+  if (outcome === 'no_purchase') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/20">❌ NO PURCHASE</span>;
+  if (outcome === 'no_show')     return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-500/20 text-gray-400 border border-gray-500/20">👻 NO SHOW</span>;
+  if (outcome === 'pending')     return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/20">⏳ PENDING</span>;
+  if (status === 'cancelled')    return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-600/20 text-gray-500 border border-gray-600/20">🚫 CANCELED</span>;
   return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/20">{status}</span>;
 }
 
@@ -103,7 +101,7 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen -m-4 lg:-m-6" style={{ background: 'linear-gradient(135deg, #0a0a14 0%, #0f0f1e 50%, #0a0a14 100%)' }}>
       {/* Top Bar */}
-      <div className="border-b border-white/8 px-6 py-4 flex items-center justify-between">
+      <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-2xl">🏆</span>
           <div>
@@ -122,7 +120,9 @@ export default function LeaderboardPage() {
               Activity Log
             </button>
           </div>
-          <a href='/vas/new' className="bg-orange text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-600 transition-colors">+ Log Appointment</a>
+          <Link href="/vas/new" className="bg-orange text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-600 transition-colors">
+            + Log Appointment
+          </Link>
           <input type="month" value={month} onChange={e => setMonth(e.target.value)}
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 focus:outline-none" />
         </div>
@@ -135,10 +135,9 @@ export default function LeaderboardPage() {
           <div className="text-center py-32">
             <div className="text-5xl mb-4">🏆</div>
             <div className="text-white/40 text-lg">No data for {monthLabel}</div>
-            <div className="text-white/20 text-sm mt-2">Book appointments and assign a VAS rep to start competing.</div>
+            <div className="text-white/20 text-sm mt-2">Log appointments and assign a VAS rep to start competing.</div>
           </div>
         ) : activeTab === 'activity' ? (
-          /* ── ACTIVITY LOG TAB ── */
           <div className="space-y-2">
             <div className="text-white/40 text-xs uppercase tracking-widest font-semibold mb-4">All Appointments · {monthLabel}</div>
             {allRecent.map(appt => {
@@ -160,48 +159,36 @@ export default function LeaderboardPage() {
                   </div>
                   <div className="text-xs text-white/30 flex-shrink-0">{appt.scheduled_date}</div>
                   <OutcomePill outcome={appt.outcome} status={appt.status} />
-                  {appt.purchase_amount ? (
-                    <div className="text-sm font-bold text-emerald-400 flex-shrink-0 w-20 text-right">${appt.purchase_amount.toLocaleString()}</div>
-                  ) : <div className="w-20" />}
-                </Link>
+                </div>
               );
             })}
           </div>
         ) : (
-          /* ── OVERVIEW TAB ── */
           <>
-            {/* VS Hero Banner (only when 2 reps) */}
+            {/* VS Hero (2 reps only) */}
             {leader && challenger && (
               <div className="relative mb-8 rounded-2xl overflow-hidden border border-white/8"
-                style={{ background: 'linear-gradient(90deg, rgba(249,115,22,0.08) 0%, rgba(15,15,30,1) 50%, rgba(99,102,241,0.08) 100%)' }}>
+                style={{ background: `linear-gradient(90deg, ${repColor(leader.name).primary}12 0%, #0f0f1e 50%, ${repColor(challenger.name).primary}12 100%)` }}>
                 <div className="flex items-center">
-                  {/* Leader side */}
                   <div className="flex-1 p-6 text-center">
                     <div className="text-4xl font-black text-white/90 mb-1">{leader.purchased}</div>
-                    <div className="text-xs text-white/40 uppercase tracking-widest">Purchases</div>
+                    <div className="text-xs text-white/40 uppercase tracking-widest">Acquisitions</div>
                     <div className="text-2xl font-bold mt-3" style={{ color: repColor(leader.name).primary }}>{leader.name}</div>
                     <div className="text-white/30 text-sm">{leader.level.emoji} {leader.level.label}</div>
                     {leader.onFire && <div className="text-lg mt-1">🔥</div>}
                   </div>
-
-                  {/* VS center */}
                   <div className="px-6 text-center flex-shrink-0">
                     <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 font-black text-sm">VS</div>
-                    <div className="text-xs text-white/20 mt-2 font-medium uppercase tracking-widest">March 2026</div>
+                    <div className="text-xs text-white/20 mt-2 font-medium uppercase tracking-widest">{monthLabel}</div>
                   </div>
-
-                  {/* Challenger side */}
                   <div className="flex-1 p-6 text-center">
                     <div className="text-4xl font-black text-white/90 mb-1">{challenger.purchased}</div>
-                    <div className="text-xs text-white/40 uppercase tracking-widest">Purchases</div>
+                    <div className="text-xs text-white/40 uppercase tracking-widest">Acquisitions</div>
                     <div className="text-2xl font-bold mt-3" style={{ color: repColor(challenger.name).primary }}>{challenger.name}</div>
                     <div className="text-white/30 text-sm">{challenger.level.emoji} {challenger.level.label}</div>
                     {challenger.onFire && <div className="text-lg mt-1">🔥</div>}
                   </div>
                 </div>
-
-                {/* Revenue comparison bar */}
-
               </div>
             )}
 
@@ -215,7 +202,8 @@ export default function LeaderboardPage() {
                   : 100;
 
                 return (
-                  <Link key={rep.name} href={`/leaderboard/${encodeURIComponent(rep.name)}`} className="block rounded-2xl border overflow-hidden hover:opacity-95 transition-opacity cursor-pointer"
+                  <Link key={rep.name} href={`/leaderboard/${encodeURIComponent(rep.name)}`}
+                    className="block rounded-2xl border overflow-hidden hover:opacity-95 transition-opacity"
                     style={{ borderColor: `${rc.primary}25`, background: `linear-gradient(145deg, ${rc.primary}0e 0%, #0f0f1e 60%)` }}>
 
                     {/* Card Header */}
@@ -233,7 +221,6 @@ export default function LeaderboardPage() {
                             <div className="absolute -bottom-1 -right-1 text-sm">🔥</div>
                           )}
                         </div>
-
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="text-white font-bold text-xl">{rep.name}</span>
@@ -243,11 +230,10 @@ export default function LeaderboardPage() {
                             </span>
                           </div>
                           <div className="text-white/40 text-xs mt-0.5">{rep.total} appointments booked</div>
-                          {/* Level progress */}
                           <div className="mt-2">
                             <div className="flex justify-between text-xs text-white/30 mb-1">
                               <span style={{ color: rc.primary }} className="font-bold">{rep.points} pts</span>
-                              {lvl.next && <span>{lvl.next - rep.points} to {LEVEL_CONFIG.find(l=>l.min===lvl.next)?.label}</span>}
+                              {lvl.next && <span>{lvl.next - rep.points} to {LEVEL_CONFIG.find(l => l.min === lvl.next)?.label}</span>}
                             </div>
                             <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
                               <div className="h-full rounded-full transition-all duration-1000"
@@ -255,7 +241,6 @@ export default function LeaderboardPage() {
                             </div>
                           </div>
                         </div>
-
                         <div className="text-right">
                           <div className="text-3xl font-black" style={{ color: rc.primary }}>{rep.points}</div>
                           <div className="text-xs text-white/30 uppercase tracking-wide">pts</div>
@@ -266,31 +251,28 @@ export default function LeaderboardPage() {
                     {/* Stat Grid */}
                     <div className="grid grid-cols-4 divide-x divide-white/6 border-t border-white/6">
                       {[
-                        { label: 'Appts', value: rep.total, sub: 'booked' },
-                        { label: 'Showed', value: rep.showed, sub: `${rep.showRate}% rate` },
-                        { label: 'Bought', value: rep.purchased, sub: rep.purchased > 0 ? `${rep.closeRate}% close` : '—' },
-                        { label: 'Revenue', value: `$${(rep.totalRevenue/1000).toFixed(rep.totalRevenue >= 1000 ? 0 : 1)}${rep.totalRevenue >= 1000 ? 'k' : ''}`, sub: rep.avgDeal > 0 ? `$${rep.avgDeal.toLocaleString()} avg` : '—', raw: true },
+                        { label: 'Appts',   value: rep.total,     sub: 'booked' },
+                        { label: 'Showed',  value: rep.showed,    sub: `${rep.showRate}% rate` },
+                        { label: 'Acquired', value: rep.purchased, sub: rep.purchased > 0 ? `${rep.closeRate}% close` : '—' },
+                        { label: 'Canceled', value: rep.canceled + rep.noShow, sub: rep.total > 0 ? `${Math.round((rep.canceled + rep.noShow) / rep.total * 100)}% rate` : '—' },
                       ].map(stat => (
                         <div key={stat.label} className="p-3 text-center">
-                          <div className={`font-black text-xl ${stat.raw ? 'text-emerald-400' : 'text-white'}`}>
-                            {stat.value}
-                          </div>
+                          <div className="font-black text-xl text-white">{stat.value}</div>
                           <div className="text-white/30 text-xs font-semibold uppercase tracking-wide leading-tight">{stat.label}</div>
                           <div className="text-white/20 text-xs mt-0.5">{stat.sub}</div>
                         </div>
                       ))}
                     </div>
 
-                    {/* Outcome breakdown */}
+                    {/* Outcome bar */}
                     <div className="px-5 py-3 border-t border-white/6">
-                      <div className="text-xs text-white/30 uppercase tracking-widest mb-2 font-semibold">Outcome Breakdown</div>
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="flex gap-2 flex-wrap mb-2">
                         {[
-                          { label: 'Purchased', count: rep.purchased, color: '#10b981' },
+                          { label: 'Acquired',    count: rep.purchased,  color: '#10b981' },
                           { label: 'No Purchase', count: rep.noPurchase, color: '#ef4444' },
-                          { label: 'No Show', count: rep.noShow, color: '#6b7280' },
-                          { label: 'Canceled', count: rep.canceled, color: '#374151' },
-                          { label: 'Pending', count: rep.pending, color: '#f59e0b' },
+                          { label: 'No Show',     count: rep.noShow,     color: '#6b7280' },
+                          { label: 'Canceled',    count: rep.canceled,   color: '#374151' },
+                          { label: 'Pending',     count: rep.pending,    color: '#f59e0b' },
                         ].filter(o => o.count > 0).map(o => (
                           <div key={o.label} className="flex items-center gap-1.5 text-xs">
                             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: o.color }} />
@@ -299,9 +281,7 @@ export default function LeaderboardPage() {
                           </div>
                         ))}
                       </div>
-
-                      {/* Visual bar */}
-                      <div className="flex h-1.5 rounded-full overflow-hidden mt-2 gap-px">
+                      <div className="flex h-1.5 rounded-full overflow-hidden gap-px">
                         {rep.total > 0 && [
                           { count: rep.purchased,  color: '#10b981' },
                           { count: rep.noPurchase, color: '#ef4444' },
@@ -309,30 +289,23 @@ export default function LeaderboardPage() {
                           { count: rep.canceled,   color: '#374151' },
                           { count: rep.pending,    color: '#f59e0b' },
                         ].filter(o => o.count > 0).map((o, i) => (
-                          <div key={i} className="h-full rounded-sm" style={{
-                            width: `${(o.count / rep.total) * 100}%`,
-                            backgroundColor: o.color,
-                          }} />
+                          <div key={i} style={{ width: `${(o.count / rep.total) * 100}%`, backgroundColor: o.color }} className="h-full rounded-sm" />
                         ))}
                       </div>
                     </div>
 
-                    {/* Points breakdown */}
-                    <div className="px-5 py-3 border-t border-white/6 bg-white/2">
+                    <div className="px-5 py-2.5 border-t border-white/6 bg-white/2">
                       <div className="text-xs text-white/20">
                         <span className="text-white/40 font-semibold">Points: </span>
-                        {rep.total * 10} scheduled
-                        {rep.showed > 0 && ` + ${rep.showed * 20} showed`}
-                        {rep.purchased > 0 && ` + ${rep.purchased * 100}+ purchased`}
-                        {rep.totalRevenue > 0 && ` + ${Math.floor(rep.totalRevenue/1000)} revenue bonus`}
+                        {rep.total * 10} booked{rep.showed > 0 && ` + ${rep.showed * 20} showed`}{rep.purchased > 0 && ` + ${rep.purchased * 100} acquired`}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
 
-            {/* Head-to-head comparison */}
+            {/* Head-to-head */}
             {leader && challenger && (
               <div className="bg-white/3 border border-white/8 rounded-2xl p-5 mb-6">
                 <div className="flex justify-between items-center mb-4">
@@ -344,10 +317,9 @@ export default function LeaderboardPage() {
                 </div>
                 <StatRow label="Appointments Booked" a={leader.total} b={challenger.total} />
                 <StatRow label="Customers Showed" a={leader.showed} b={challenger.showed} />
-                <StatRow label="Vehicles Purchased" a={leader.purchased} b={challenger.purchased} />
+                <StatRow label="Vehicles Acquired" a={leader.purchased} b={challenger.purchased} />
                 <StatRow label="Show Rate" a={leader.showRate} b={challenger.showRate} format={n => `${n}%`} />
                 <StatRow label="Close Rate" a={leader.closeRate} b={challenger.closeRate} format={n => `${n}%`} />
-                <StatRow label="Revenue Generated" a={leader.totalRevenue} b={challenger.totalRevenue} format={n => `$${n.toLocaleString()}`} />
                 <StatRow label="Points" a={leader.points} b={challenger.points} />
               </div>
             )}
@@ -364,13 +336,12 @@ export default function LeaderboardPage() {
                   return (
                     <div key={appt.id} className="flex items-center gap-3">
                       <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: rc.primary }} />
-                      <div className="text-xs text-white/50 w-14 flex-shrink-0" style={{ color: rc.primary }}>{appt.vas_rep}</div>
+                      <div className="text-xs font-semibold w-14 flex-shrink-0" style={{ color: rc.primary }}>{appt.vas_rep}</div>
                       <div className="flex-1 text-xs text-white/70 truncate">
                         {appt.customer ? `${appt.customer.first_name} ${appt.customer.last_name}` : '—'}
                         {appt.vehicle && <span className="text-white/30 ml-1">· {appt.vehicle.year} {appt.vehicle.make}</span>}
                       </div>
                       <OutcomePill outcome={appt.outcome} status={appt.status} />
-                      {appt.purchase_amount ? <span className="text-xs font-bold text-emerald-400">${appt.purchase_amount.toLocaleString()}</span> : null}
                     </div>
                   );
                 })}
