@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import { useEffect, useState } from 'react';
 
@@ -121,6 +122,7 @@ export default function LeaderboardPage() {
               Activity Log
             </button>
           </div>
+          <a href='/vas/new' className="bg-orange text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-600 transition-colors">+ Log Appointment</a>
           <input type="month" value={month} onChange={e => setMonth(e.target.value)}
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 focus:outline-none" />
         </div>
@@ -161,7 +163,7 @@ export default function LeaderboardPage() {
                   {appt.purchase_amount ? (
                     <div className="text-sm font-bold text-emerald-400 flex-shrink-0 w-20 text-right">${appt.purchase_amount.toLocaleString()}</div>
                   ) : <div className="w-20" />}
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -199,24 +201,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 {/* Revenue comparison bar */}
-                <div className="px-6 pb-5">
-                  <div className="text-xs text-white/30 text-center mb-2 uppercase tracking-widest">Revenue Generated</div>
-                  <div className="flex gap-1 h-2 rounded-full overflow-hidden bg-white/5">
-                    {(leader.totalRevenue + challenger.totalRevenue) > 0 ? (
-                      <>
-                        <div className="rounded-l-full transition-all" style={{
-                          width: `${(leader.totalRevenue / (leader.totalRevenue + challenger.totalRevenue)) * 100}%`,
-                          background: repColor(leader.name).primary
-                        }} />
-                        <div className="flex-1 rounded-r-full" style={{ background: repColor(challenger.name).primary }} />
-                      </>
-                    ) : <div className="flex-1 bg-white/10 rounded-full" />}
-                  </div>
-                  <div className="flex justify-between text-xs mt-1.5">
-                    <span className="font-bold" style={{ color: repColor(leader.name).primary }}>${leader.totalRevenue.toLocaleString()}</span>
-                    <span className="font-bold" style={{ color: repColor(challenger.name).primary }}>${challenger.totalRevenue.toLocaleString()}</span>
-                  </div>
-                </div>
+
               </div>
             )}
 
@@ -230,7 +215,7 @@ export default function LeaderboardPage() {
                   : 100;
 
                 return (
-                  <div key={rep.name} className="rounded-2xl border overflow-hidden"
+                  <Link key={rep.name} href={`/leaderboard/${encodeURIComponent(rep.name)}`} className="block rounded-2xl border overflow-hidden hover:opacity-95 transition-opacity cursor-pointer"
                     style={{ borderColor: `${rc.primary}25`, background: `linear-gradient(145deg, ${rc.primary}0e 0%, #0f0f1e 60%)` }}>
 
                     {/* Card Header */}

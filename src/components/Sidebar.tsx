@@ -22,6 +22,7 @@ const navItems = [
   { href: '/day', label: "Driver's Day", icon: Route },
   { href: '/appointments/new', label: 'New Appointment', icon: Plus },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/vas/new', label: 'Log Acquisition', icon: Plus },
   { href: '/agents', label: 'Agents', icon: Users },
 ];
 
