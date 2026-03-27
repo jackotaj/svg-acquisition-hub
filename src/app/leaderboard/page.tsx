@@ -169,24 +169,49 @@ export default function LeaderboardPage() {
             {leader && challenger && (
               <div className="relative mb-8 rounded-2xl overflow-hidden border border-white/8"
                 style={{ background: `linear-gradient(90deg, ${repColor(leader.name).primary}12 0%, #0f0f1e 50%, ${repColor(challenger.name).primary}12 100%)` }}>
-                <div className="flex items-center">
-                  <div className="flex-1 p-6 text-center">
-                    <div className="text-4xl font-black text-white/90 mb-1">{leader.purchased}</div>
-                    <div className="text-xs text-white/40 uppercase tracking-widest">Acquisitions</div>
-                    <div className="text-2xl font-bold mt-3" style={{ color: repColor(leader.name).primary }}>{leader.name}</div>
-                    <div className="text-white/30 text-sm">{leader.level.emoji} {leader.level.label}</div>
-                    {leader.onFire && <div className="text-lg mt-1">🔥</div>}
+                <div>
+                  <div className="flex items-center">
+                    <div className="flex-1 p-6 text-center">
+                      <div className="text-5xl font-black mb-1" style={{ color: repColor(leader.name).primary }}>{leader.purchased}</div>
+                      <div className="text-xs text-white/40 uppercase tracking-widest">Acquisitions</div>
+                      <div className="text-2xl font-bold mt-3 text-white">{leader.name}</div>
+                      <div className="text-white/30 text-sm">{leader.level.emoji} {leader.level.label}{leader.onFire ? ' 🔥' : ''}</div>
+                    </div>
+                    <div className="px-6 text-center flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 font-black text-sm">VS</div>
+                      <div className="text-xs text-white/20 mt-2 font-medium uppercase tracking-widest">{monthLabel}</div>
+                    </div>
+                    <div className="flex-1 p-6 text-center">
+                      <div className="text-5xl font-black mb-1" style={{ color: repColor(challenger.name).primary }}>{challenger.purchased}</div>
+                      <div className="text-xs text-white/40 uppercase tracking-widest">Acquisitions</div>
+                      <div className="text-2xl font-bold mt-3 text-white">{challenger.name}</div>
+                      <div className="text-white/30 text-sm">{challenger.level.emoji} {challenger.level.label}{challenger.onFire ? ' 🔥' : ''}</div>
+                    </div>
                   </div>
-                  <div className="px-6 text-center flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 font-black text-sm">VS</div>
-                    <div className="text-xs text-white/20 mt-2 font-medium uppercase tracking-widest">{monthLabel}</div>
-                  </div>
-                  <div className="flex-1 p-6 text-center">
-                    <div className="text-4xl font-black text-white/90 mb-1">{challenger.purchased}</div>
-                    <div className="text-xs text-white/40 uppercase tracking-widest">Acquisitions</div>
-                    <div className="text-2xl font-bold mt-3" style={{ color: repColor(challenger.name).primary }}>{challenger.name}</div>
-                    <div className="text-white/30 text-sm">{challenger.level.emoji} {challenger.level.label}</div>
-                    {challenger.onFire && <div className="text-lg mt-1">🔥</div>}
+                  {/* Combined goal tracker */}
+                  <div className="px-6 pb-5">
+                    <div className="text-xs text-white/30 text-center mb-2 uppercase tracking-widest font-semibold">Monthly Goal — 20 Acquisitions Each</div>
+                    <div className="flex gap-4">
+                      {[leader, challenger].map(rep => {
+                        const GOAL = 20;
+                        const pct = Math.min(100, (rep.purchased / GOAL) * 100);
+                        const hit = rep.purchased >= GOAL;
+                        const rc = repColor(rep.name);
+                        return (
+                          <div key={rep.name} className="flex-1">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="font-bold" style={{ color: rc.primary }}>{rep.name}</span>
+                              <span className="font-black" style={{ color: hit ? '#10b981' : rc.primary }}>
+                                {hit ? '🎯 DONE' : `${rep.purchased}/${GOAL}`}
+                              </span>
+                            </div>
+                            <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: hit ? '#10b981' : rc.primary }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -248,13 +273,42 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
 
+                    {/* Monthly Goal Tracker */}
+                    {(() => {
+                      const GOAL = 20;
+                      const pct = Math.min(100, (rep.purchased / GOAL) * 100);
+                      const hit = rep.purchased >= GOAL;
+                      const remaining = Math.max(0, GOAL - rep.purchased);
+                      return (
+                        <div className="px-5 py-3 border-t border-white/6 bg-white/2">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs text-white/40 font-semibold uppercase tracking-wide">
+                              Monthly Goal
+                            </span>
+                            <span className="text-xs font-black" style={{ color: hit ? '#10b981' : rc.primary }}>
+                              {hit ? '🎯 GOAL REACHED!' : `${rep.purchased} / ${GOAL} acquisitions`}
+                            </span>
+                          </div>
+                          <div className="h-3 bg-white/8 rounded-full overflow-hidden relative">
+                            <div className="h-full rounded-full transition-all duration-1000 relative"
+                              style={{ width: `${pct}%`, background: hit ? '#10b981' : `linear-gradient(90deg, ${rc.primary}, ${rc.primary}cc)` }}>
+                              {pct > 15 && (
+                                <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-black leading-none">{Math.round(pct)}%</span>
+                              )}
+                            </div>
+                          </div>
+                          {!hit && <div className="text-xs text-white/20 mt-1">{remaining} more to hit the goal</div>}
+                        </div>
+                      );
+                    })()}
+
                     {/* Stat Grid */}
                     <div className="grid grid-cols-4 divide-x divide-white/6 border-t border-white/6">
                       {[
-                        { label: 'Appts',   value: rep.total,     sub: 'booked' },
-                        { label: 'Showed',  value: rep.showed,    sub: `${rep.showRate}% rate` },
+                        { label: 'Appts',    value: rep.total,     sub: 'booked' },
+                        { label: 'Showed',   value: rep.showed,    sub: `${rep.showRate}% rate` },
                         { label: 'Acquired', value: rep.purchased, sub: rep.purchased > 0 ? `${rep.closeRate}% close` : '—' },
-                        { label: 'Canceled', value: rep.canceled + rep.noShow, sub: rep.total > 0 ? `${Math.round((rep.canceled + rep.noShow) / rep.total * 100)}% rate` : '—' },
+                        { label: 'No Shows', value: rep.noShow,    sub: rep.total > 0 ? `${Math.round(rep.noShow / rep.total * 100)}% rate` : '—' },
                       ].map(stat => (
                         <div key={stat.label} className="p-3 text-center">
                           <div className="font-black text-xl text-white">{stat.value}</div>
