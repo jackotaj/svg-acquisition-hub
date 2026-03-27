@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   Route,
+  Trophy,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/map', label: 'Map', icon: MapPin },
   { href: '/day', label: "Driver's Day", icon: Route },
   { href: '/appointments/new', label: 'New Appointment', icon: Plus },
+  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/agents', label: 'Agents', icon: Users },
 ];
 

@@ -18,6 +18,9 @@ interface Appointment {
   appraisal_notes: string | null;
   final_offer: number | null;
   outcome: string | null;
+  vas_rep: string | null;
+  lead_source: string | null;
+  purchase_amount: number | null;
   customer: {
     id: string;
     first_name: string;
@@ -190,6 +193,22 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
               {appt.travel_minutes && <div className="text-xs text-slate-400">~{appt.travel_minutes} min drive</div>}
             </div>
           </div>
+
+          {/* VAS Rep + Lead Source */}
+          {(appt.vas_rep || appt.lead_source) && (
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-3">
+              {appt.vas_rep && (
+                <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full font-medium">
+                  👤 Scheduled by {appt.vas_rep}
+                </span>
+              )}
+              {appt.lead_source && (
+                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                  📣 {appt.lead_source}
+                </span>
+              )}
+            </div>
+          )}
 
           {appt.agent && (
             <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3">

@@ -54,6 +54,9 @@ export interface Appointment {
   lat: number | null;
   lng: number | null;
   notes: string | null;
+  vas_rep: string | null;
+  lead_source: string | null;
+  purchase_amount: number | null;
   created_at: string;
   updated_at: string;
   customer?: Customer;

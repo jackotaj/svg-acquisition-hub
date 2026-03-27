@@ -60,6 +60,8 @@ export default function NewAppointmentForm() {
     agent_id: searchParams.get('agent') || '',
     time: searchParams.get('time') || '09:00',
     notes: '',
+    vas_rep: '',
+    lead_source: '',
   });
 
   useEffect(() => {
@@ -322,6 +324,34 @@ export default function NewAppointmentForm() {
               ) : (
                 <span>📍 Enter the appointment address to see drive time</span>
               )}
+            </div>
+
+            {/* VAS Rep + Lead Source */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Scheduled By (VAS)</label>
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] bg-white"
+                  value={appt.vas_rep} onChange={e => setAppt(p => ({...p, vas_rep: e.target.value}))}>
+                  <option value="">— Select —</option>
+                  <option value="Bianka">Bianka</option>
+                  <option value="David">David</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Lead Source</label>
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] bg-white"
+                  value={appt.lead_source} onChange={e => setAppt(p => ({...p, lead_source: e.target.value}))}>
+                  <option value="">— Select —</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Craigslist">Craigslist</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="CarGurus">CarGurus</option>
+                  <option value="Walk-In">Walk-In</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
 
             <div>
