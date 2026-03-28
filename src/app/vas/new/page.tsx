@@ -13,6 +13,19 @@ const OUTCOMES = [
   { value: 'no_purchase',label: '❌ No Purchase' },
   { value: 'no_show',    label: '👻 No Show' },
   { value: 'pending',    label: '⏳ Pending' },
+  { value: 'offered',    label: '💬 Offered — Waiting' },
+];
+
+const CONDITIONS = ['Clean', 'Good', 'Fair', 'Poor', 'Unknown'];
+
+const LOST_REASONS = [
+  'Price Too Low',
+  'Sold to CarMax/Carvana',
+  'Sold Privately',
+  'Changed Mind / Keeping Car',
+  'Vehicle Not Qualifiable',
+  'Needs More Time',
+  'Other',
 ];
 
 interface FormData {
@@ -30,6 +43,10 @@ interface FormData {
   outcome: string;
   purchase_amount: string;
   notes: string;
+  mileage: string;
+  condition: string;
+  offer_amount: string;
+  lost_reason: string;
 }
 
 const EMPTY: FormData = {
@@ -38,6 +55,7 @@ const EMPTY: FormData = {
   scheduled_date: new Date().toISOString().split('T')[0],
   scheduled_time: '10:00',
   address: '', outcome: '', purchase_amount: '', notes: '',
+  mileage: '', condition: '', offer_amount: '', lost_reason: '',
 };
 
 export default function VasNewPage() {
@@ -77,6 +95,8 @@ export default function VasNewPage() {
           year: form.vehicle_year ? parseInt(form.vehicle_year) : null,
           make: form.vehicle_make,
           model: form.vehicle_model || null,
+          mileage: form.mileage ? parseInt(form.mileage.replace(/[^0-9]/g, '')) : null,
+          condition: form.condition || null,
         }),
       });
       const veh = await vehRes.json();
@@ -101,6 +121,8 @@ export default function VasNewPage() {
           lead_source: form.lead_source || null,
           outcome: form.outcome || null,
           purchase_amount: form.purchase_amount ? parseFloat(form.purchase_amount.replace(/[^0-9.]/g, '')) : null,
+          offer_amount: form.offer_amount ? parseFloat(form.offer_amount.replace(/[^0-9.]/g, '')) : null,
+          lost_reason: form.lost_reason || null,
           notes: form.notes || null,
           status,
         }),
@@ -199,7 +221,7 @@ export default function VasNewPage() {
         {/* Vehicle */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <h2 className="text-sm font-bold text-navy uppercase tracking-wide mb-4">Vehicle</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Year</label>
               <input value={form.vehicle_year} onChange={e => set('vehicle_year', e.target.value)}
@@ -217,6 +239,22 @@ export default function VasNewPage() {
               <input value={form.vehicle_model} onChange={e => set('vehicle_model', e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
                 placeholder="Highlander" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Mileage</label>
+              <input value={form.mileage} onChange={e => set('mileage', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                placeholder="87,500" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Condition</label>
+              <select value={form.condition} onChange={e => set('condition', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
+                <option value="">Select condition</option>
+                {CONDITIONS.map(c => <option key={c}>{c}</option>)}
+              </select>
             </div>
           </div>
         </div>
@@ -247,7 +285,7 @@ export default function VasNewPage() {
         {/* Outcome */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <h2 className="text-sm font-bold text-navy uppercase tracking-wide mb-4">Outcome</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Result</label>
               <select value={form.outcome} onChange={e => set('outcome', e.target.value)}
@@ -255,15 +293,32 @@ export default function VasNewPage() {
                 {OUTCOMES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
-            {form.outcome === 'purchased' && (
-              <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Purchase Price</label>
-                <input value={form.purchase_amount} onChange={e => set('purchase_amount', e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
-                  placeholder="$0" />
-              </div>
-            )}
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Offer Amount Made</label>
+              <input value={form.offer_amount} onChange={e => set('offer_amount', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                placeholder="$0 — what we offered" />
+            </div>
           </div>
+          {form.outcome === 'purchased' && (
+            <div className="mb-4">
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Purchase Price (Final)</label>
+              <input value={form.purchase_amount} onChange={e => set('purchase_amount', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                placeholder="$0" />
+            </div>
+          )}
+          {form.outcome === 'no_purchase' && (
+            <div className="mb-4">
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Why Did They Say No? <span className="text-orange">*</span></label>
+              <select value={form.lost_reason} onChange={e => set('lost_reason', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
+                <option value="">Select reason (important!)</option>
+                {LOST_REASONS.map(r => <option key={r}>{r}</option>)}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">This data drives your analytics. Log it every time.</p>
+            </div>
+          )}
           <div className="mt-4">
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Notes</label>
             <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2}

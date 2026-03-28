@@ -6,7 +6,14 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { data, error } = await supabaseAdmin
     .from('acq_vehicles')
-    .insert({ customer_id: body.customer_id, year: body.year || null, make: body.make, model: body.model || null })
+    .insert({
+      customer_id: body.customer_id,
+      year: body.year || null,
+      make: body.make,
+      model: body.model || null,
+      mileage: body.mileage || null,
+      condition: body.condition || null,
+    })
     .select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);

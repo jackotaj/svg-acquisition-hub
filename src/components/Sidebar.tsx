@@ -12,6 +12,7 @@ import {
   X,
   Route,
   Trophy,
+  BarChart3,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/day', label: "Driver's Day", icon: Route },
   { href: '/appointments/new', label: 'New Appointment', icon: Plus },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/vas/new', label: 'Log Acquisition', icon: Plus },
   { href: '/agents', label: 'Agents', icon: Users },
 ];

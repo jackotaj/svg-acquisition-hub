@@ -43,6 +43,36 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
+
+  // Simple direct insert (from /vas/new form — customer_id and vehicle_id already exist)
+  if (body.customer_id && body.vehicle_id) {
+    const { data, error } = await supabaseAdmin
+      .from('acq_appointments')
+      .insert({
+        customer_id: body.customer_id,
+        vehicle_id: body.vehicle_id,
+        agent_id: body.agent_id || null,
+        scheduled_date: body.scheduled_date,
+        scheduled_time: body.scheduled_time,
+        address: body.address || null,
+        city: body.city || '',
+        state: body.state || '',
+        zip: body.zip || '',
+        vas_rep: body.vas_rep || null,
+        lead_source: body.lead_source || null,
+        outcome: body.outcome || null,
+        purchase_amount: body.purchase_amount || null,
+        offer_amount: body.offer_amount || null,
+        lost_reason: body.lost_reason || null,
+        notes: body.notes || null,
+        status: body.status || 'scheduled',
+      })
+      .select('*, customer:acq_customers(*), vehicle:acq_vehicles(*)')
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
+  }
+
   const { customer, vehicle, appointment } = body;
 
   // Create customer
