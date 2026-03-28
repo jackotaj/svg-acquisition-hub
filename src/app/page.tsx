@@ -85,6 +85,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
+            href: '/schedule',
             icon: <Calendar size={16} className="text-orange" />,
             bg: 'bg-orange/10',
             label: 'Today',
@@ -95,6 +96,7 @@ export default function DashboardPage() {
             extra: today.purchased > 0 && <div className="text-xs font-bold text-green-600 dark:text-green-400 mt-1">🎯 {today.purchased} acquired</div>,
           },
           {
+            href: '/leaderboard',
             icon: <Target size={16} className="text-green-600 dark:text-green-400" />,
             bg: 'bg-green-50 dark:bg-green-900/20',
             label: 'Monthly Goal',
@@ -107,6 +109,7 @@ export default function DashboardPage() {
             ),
           },
           {
+            href: '/analytics',
             icon: <TrendingUp size={16} className="text-blue-600 dark:text-blue-400" />,
             bg: 'bg-blue-50 dark:bg-blue-900/20',
             label: 'This Week',
@@ -114,6 +117,7 @@ export default function DashboardPage() {
             sub: 'appointments booked',
           },
           {
+            href: '/analytics',
             icon: <Car size={16} className="text-purple-600 dark:text-purple-400" />,
             bg: 'bg-purple-50 dark:bg-purple-900/20',
             label: 'Conv. Rate',
@@ -121,15 +125,15 @@ export default function DashboardPage() {
             sub: `${month.purchased} of ${month.total} appts this month`,
           },
         ].map((card, i) => (
-          <div key={i} className="bg-card border border-card-border rounded-xl shadow-sm p-4">
+          <Link key={i} href={card.href} className="bg-card border border-card-border rounded-xl shadow-sm p-4 hover:border-orange/40 hover:shadow-md transition-all group block">
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-8 h-8 ${card.bg} rounded-lg flex items-center justify-center`}>{card.icon}</div>
               <span className="text-xs font-bold text-muted uppercase tracking-wide">{card.label}</span>
             </div>
-            <div className="text-3xl font-black text-navy dark:text-white">{card.value}</div>
+            <div className="text-3xl font-black text-navy dark:text-white group-hover:text-orange transition-colors">{card.value}</div>
             <div className="text-xs text-muted mt-1">{card.sub}</div>
             {card.extra}
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -147,11 +151,11 @@ export default function DashboardPage() {
             const color = REP_COLORS[v.rep] || '#f97316';
             const hit = v.purchased >= 20;
             return (
-              <div key={v.rep} className="mb-4 last:mb-0">
+              <Link key={v.rep} href={`/leaderboard/${encodeURIComponent(v.rep)}`} className="block mb-4 last:mb-0 rounded-lg p-2 -mx-2 hover:bg-muted-bg transition-colors group">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ background: color }}>{v.rep[0]}</div>
-                    <span className="font-semibold text-sm text-foreground">{v.rep}</span>
+                    <span className="font-semibold text-sm text-foreground group-hover:text-orange transition-colors">{v.rep}</span>
                   </div>
                   <span className="font-black text-sm" style={{ color: hit ? '#10b981' : color }}>
                     {hit ? '🎯 DONE' : `${v.purchased}/20`}
@@ -164,7 +168,7 @@ export default function DashboardPage() {
                   <span>{v.total} appts booked</span>
                   <span>{Math.max(0, 20 - v.purchased)} to go</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -187,11 +191,11 @@ export default function DashboardPage() {
                 const agentColor = Array.isArray(a.agent) ? (a.agent[0] as { color_hex: string } | null)?.color_hex : (a.agent as { name: string; color_hex: string } | null)?.color_hex;
                 const agentName = Array.isArray(a.agent) ? (a.agent[0] as { name: string } | null)?.name : (a.agent as { name: string } | null)?.name;
                 return (
-                  <div key={a.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted-bg hover:bg-muted-bg/80 transition-colors">
+                  <Link key={a.id} href={`/appointments/${a.id}`} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted-bg hover:bg-orange/5 hover:border-orange/20 border border-transparent transition-colors group">
                     <div className="text-xs font-bold text-muted w-10 flex-shrink-0">{a.scheduled_time.slice(0,5)}</div>
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: agentColor || '#e5e7eb' }} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-foreground truncate">
+                      <div className="text-sm font-semibold text-foreground group-hover:text-orange transition-colors truncate">
                         {a.customer ? `${a.customer.first_name} ${a.customer.last_name}` : '—'}
                       </div>
                       <div className="text-xs text-muted truncate">
@@ -200,7 +204,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     {outcomeTag(a.outcome, a.status)}
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -218,9 +222,9 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {recentAppts.map(a => (
-                <div key={a.id} className="flex items-start gap-3 py-2 border-b border-card-border last:border-0">
+                <Link key={a.id} href={`/appointments/${a.id}`} className="flex items-start gap-3 py-2 border-b border-card-border last:border-0 hover:bg-muted-bg rounded-lg px-1 -mx-1 transition-colors group">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">
+                    <div className="text-sm font-semibold text-foreground group-hover:text-orange transition-colors truncate">
                       {a.customer ? `${a.customer.first_name} ${a.customer.last_name}` : '—'}
                     </div>
                     <div className="text-xs text-muted">
@@ -234,7 +238,7 @@ export default function DashboardPage() {
                       <div className="text-xs font-bold text-green-600 dark:text-green-400 mt-0.5">${a.purchase_amount.toLocaleString()}</div>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
