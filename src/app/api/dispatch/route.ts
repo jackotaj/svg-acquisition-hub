@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const { data: appts, error } = await supabaseAdmin
       .from('acq_appointments')
       .select(`
-        id, scheduled_time, duration_mins, status, outcome, lat, lng, address,
+        id, scheduled_time, status, outcome, lat, lng, address,
         customer:acq_customers(first_name, last_name),
         vehicle:acq_vehicles(year, make, model),
         agent:acq_agents(id, name, color_hex)
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       for (const stop of stops) {
         const timeParts = stop.scheduled_time.split(':');
         const scheduledMins = parseInt(timeParts[0]) * 60 + parseInt(timeParts[1]);
-        const appraisalMins = stop.duration_mins || APPRAISAL_MINS;
+        const appraisalMins = APPRAISAL_MINS;
 
         // Drive time estimate
         const toLat = stop.lat ?? prevLat;
