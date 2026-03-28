@@ -15,6 +15,7 @@ export default function MapPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
+  const directionsRenderersRef = useRef<google.maps.DirectionsRenderer[]>([]);
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -35,6 +36,7 @@ export default function MapPage() {
     (async () => {
       const { Map } = await importLibrary('maps') as google.maps.MapsLibrary;
       await importLibrary('marker');
+      await importLibrary('routes');
       if (mapRef.current && !mapInstanceRef.current) {
         mapInstanceRef.current = new Map(mapRef.current, {
           center: { lat: BASE_LOCATION.lat, lng: BASE_LOCATION.lng },
@@ -75,11 +77,13 @@ export default function MapPage() {
     if (!mapReady || !mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
-    // Clear old markers and polylines
+    // Clear old markers, polylines, and direction renderers
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
     polylinesRef.current.forEach((p) => p.setMap(null));
     polylinesRef.current = [];
+    directionsRenderersRef.current.forEach((r) => r.setMap(null));
+    directionsRenderersRef.current = [];
 
     const filteredAppts = appointments.filter(
       (a) => a.agent_id && visibleAgents.has(a.agent_id) && a.lat && a.lng
@@ -128,20 +132,47 @@ export default function MapPage() {
         markersRef.current.push(marker);
       });
 
-      // Draw route polyline from base through appointments
-      const routePoints = [
-        { lat: BASE_LOCATION.lat, lng: BASE_LOCATION.lng },
-        ...appts.map((a) => ({ lat: a.lat!, lng: a.lng! })),
-      ];
+      // Draw road route using Directions API
+      if (appts.length > 0) {
+        const directionsService = new google.maps.DirectionsService();
+        const renderer = new google.maps.DirectionsRenderer({
+          map,
+          suppressMarkers: true, // we draw our own numbered markers
+          polylineOptions: {
+            strokeColor: color,
+            strokeOpacity: 0.8,
+            strokeWeight: 4,
+          },
+        });
+        directionsRenderersRef.current.push(renderer);
 
-      const polyline = new google.maps.Polyline({
-        path: routePoints,
-        strokeColor: color,
-        strokeOpacity: 0.7,
-        strokeWeight: 3,
-        map,
-      });
-      polylinesRef.current.push(polyline);
+        const origin = { lat: BASE_LOCATION.lat, lng: BASE_LOCATION.lng };
+        const destination = appts.length === 1
+          ? { lat: appts[0].lat!, lng: appts[0].lng! }
+          : { lat: appts[appts.length - 1].lat!, lng: appts[appts.length - 1].lng! };
+
+        const waypoints = appts.length > 1
+          ? appts.slice(0, -1).map((a) => ({
+              location: { lat: a.lat!, lng: a.lng! },
+              stopover: true,
+            }))
+          : [];
+
+        directionsService.route(
+          {
+            origin,
+            destination,
+            waypoints,
+            travelMode: google.maps.TravelMode.DRIVING,
+            optimizeWaypoints: false,
+          },
+          (result, status) => {
+            if (status === google.maps.DirectionsStatus.OK && result) {
+              renderer.setDirections(result);
+            }
+          }
+        );
+      }
     });
   }, [appointments, agents, visibleAgents, mapReady]);
 
