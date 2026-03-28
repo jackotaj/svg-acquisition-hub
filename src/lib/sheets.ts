@@ -5,7 +5,12 @@
  */
 
 const SPREADSHEET_ID = '1TOoTsmLHOEMsKHrfofS99-SU_7rh_i0EJbvDONpFRBI';
-const SHEET_NAME = 'Appointments'; // adjust to match your actual tab name
+// Sheet has per-rep tabs: "Bianka", "DAVID" — maps rep name → sheet tab name
+const REP_SHEET_MAP: Record<string, string> = {
+  'Bianka': 'Bianka',
+  'David':  'DAVID',
+  'Other':  'Bianka', // fallback
+};
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
 async function getAccessToken(): Promise<string> {
@@ -102,17 +107,17 @@ function apptToRow(appt: Record<string, any>): string[] {
   ];
 }
 
-/** Ensure header row exists */
-async function ensureHeader(token: string) {
+/** Ensure header row exists in a given tab */
+async function ensureHeader(token: string, sheetTab: string) {
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z1`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetTab)}!A1:Z1`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await res.json();
   const existing = data.values?.[0];
   if (!existing || existing[0] !== 'ID') {
     await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z1?valueInputOption=RAW`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetTab)}!A1:Z1?valueInputOption=RAW`,
       {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -122,28 +127,28 @@ async function ensureHeader(token: string) {
   }
 }
 
-/** Write a single appointment to the sheet (append or update) */
+/** Write a single appointment to the correct rep's sheet tab */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function syncApptToSheet(appt: Record<string, any>) {
   try {
     const token = await getAccessToken();
-    await ensureHeader(token);
+    const sheetTab = REP_SHEET_MAP[appt.vas_rep] || 'Bianka';
+    await ensureHeader(token, sheetTab);
 
-    // Read all IDs to find existing row
+    // Read all IDs in this tab
     const existing = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A:A`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetTab}!A:A`,
       { headers: { Authorization: `Bearer ${token}` } }
     ).then(r => r.json());
 
     const ids: string[] = (existing.values || []).map((r: string[]) => r[0]);
-    const rowIdx = ids.indexOf(appt.id); // 0-based
+    const rowIdx = ids.indexOf(appt.id);
     const row = apptToRow(appt);
 
     if (rowIdx > 0) {
-      // Update existing row (rowIdx is 0-based, sheets are 1-based, +1 for header)
       const sheetRow = rowIdx + 1;
       await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A${sheetRow}:Z${sheetRow}?valueInputOption=RAW`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetTab)}!A${sheetRow}:Z${sheetRow}?valueInputOption=RAW`,
         {
           method: 'PUT',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -151,9 +156,8 @@ export async function syncApptToSheet(appt: Record<string, any>) {
         }
       );
     } else {
-      // Append new row
       await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A:Z:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetTab)}!A:Z:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -168,20 +172,32 @@ export async function syncApptToSheet(appt: Record<string, any>) {
   }
 }
 
-/** Full resync — write all appointments from Supabase to sheet */
+/** Full resync — write all appointments to per-rep sheet tabs */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fullResync(appts: Record<string, any>[]) {
   try {
     const token = await getAccessToken();
-    const rows = [HEADER_ROW, ...appts.map(apptToRow)];
-    await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z${rows.length}?valueInputOption=RAW`,
-      {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: rows }),
-      }
-    );
+
+    // Group by rep
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const byRep: Record<string, Record<string, any>[]> = {};
+    for (const appt of appts) {
+      const tab = REP_SHEET_MAP[appt.vas_rep] || 'Bianka';
+      if (!byRep[tab]) byRep[tab] = [];
+      byRep[tab].push(appt);
+    }
+
+    for (const [tab, repAppts] of Object.entries(byRep)) {
+      const rows = [HEADER_ROW, ...repAppts.map(apptToRow)];
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(tab)}!A1:Z${rows.length}?valueInputOption=RAW`,
+        {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ values: rows }),
+        }
+      );
+    }
     return { ok: true, count: appts.length };
   } catch (err) {
     console.error('Full resync error:', err);
