@@ -13,12 +13,14 @@ import {
   Trophy,
   BarChart3,
   Truck,
+  Route,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const NAV = [
   { href: '/',           label: 'Dashboard',   icon: LayoutDashboard },
   { href: '/dispatch',   label: 'Dispatch',     icon: Truck },
+  { href: '/day',        label: "Driver's Day", icon: Route },
   { href: '/schedule',   label: 'Schedule',     icon: CalendarDays },
   { href: '/map',        label: 'Map',          icon: MapPin },
   { href: '/leaderboard',label: 'Leaderboard',  icon: Trophy },
