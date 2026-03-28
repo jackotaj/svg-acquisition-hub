@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
-import { MapPin } from 'lucide-react';
+import { MapPin, Phone, Navigation, ExternalLink, Clock } from 'lucide-react';
+import Link from 'next/link';
 import StatusBadge from '@/components/StatusBadge';
 import { BASE_LOCATION } from '@/lib/types';
 import type { Appointment, Agent } from '@/lib/types';
@@ -189,7 +190,7 @@ export default function MapPage() {
     });
   };
 
-  // Group appointments by agent for sidebar
+  // Group appointments by agent for sidebar (include all statuses for visibility)
   const groupedByAgent: Record<string, Appointment[]> = {};
   appointments
     .filter((a) => a.agent_id && visibleAgents.has(a.agent_id))
@@ -198,6 +199,15 @@ export default function MapPage() {
       if (!groupedByAgent[a.agent_id]) groupedByAgent[a.agent_id] = [];
       groupedByAgent[a.agent_id].push(a);
     });
+
+  const statusColor: Record<string, string> = {
+    scheduled: 'bg-blue-100 text-blue-700',
+    active: 'bg-green-100 text-green-700',
+    appraising: 'bg-yellow-100 text-yellow-700',
+    completed: 'bg-gray-100 text-gray-600',
+    cancelled: 'bg-red-100 text-red-500',
+    arrived: 'bg-green-100 text-green-700',
+  };
 
   if (noKey) {
     return (
@@ -262,50 +272,64 @@ export default function MapPage() {
         </div>
 
         {/* Appointment list by agent */}
+        {Object.keys(groupedByAgent).length === 0 && (
+          <div className="text-center py-8 text-gray-400 text-sm">No appointments for this date</div>
+        )}
         {Object.entries(groupedByAgent).map(([agentId, appts]) => {
           const agent = agents.find((a) => a.id === agentId);
+          const activeAppts = appts.filter(a => a.status !== 'cancelled');
+          const cancelledAppts = appts.filter(a => a.status === 'cancelled');
           return (
-            <div key={agentId} className="mb-4">
+            <div key={agentId} className="mb-5">
               <div className="flex items-center gap-2 mb-2">
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: agent?.color_hex }}
-                />
-                <span className="text-sm font-semibold">{agent?.name}</span>
+                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: agent?.color_hex }} />
+                <span className="text-sm font-bold text-navy dark:text-white">{agent?.name}</span>
+                <span className="text-xs text-gray-400 ml-auto">{activeAppts.length} stops</span>
               </div>
               {appts
-                .sort((a, b) =>
-                  a.scheduled_time.localeCompare(b.scheduled_time)
-                )
-                .map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => {
-                      setSelectedAppt(a);
-                      if (a.lat && a.lng && mapInstanceRef.current) {
-                        mapInstanceRef.current.panTo({ lat: a.lat, lng: a.lng });
-                        mapInstanceRef.current.setZoom(14);
-                      }
-                    }}
-                    className={`w-full text-left p-2 rounded-lg mb-1 text-xs border transition-colors ${
-                      selectedAppt?.id === a.id
-                        ? 'border-orange bg-orange/5'
-                        : 'border-gray-100 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-medium">
-                      {a.scheduled_time.slice(0, 5)} —{' '}
-                      {a.customer
-                        ? `${a.customer.first_name} ${a.customer.last_name}`
-                        : 'Unknown'}
-                    </div>
-                    <div className="text-gray-500">
-                      {a.vehicle
-                        ? `${a.vehicle.year} ${a.vehicle.make} ${a.vehicle.model}`
-                        : ''}
-                    </div>
-                  </button>
-                ))}
+                .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time))
+                .map((a) => {
+                  const isCancelled = a.status === 'cancelled';
+                  const hasCoords = !!(a.lat && a.lng);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => {
+                        setSelectedAppt(a);
+                        if (hasCoords && mapInstanceRef.current) {
+                          mapInstanceRef.current.panTo({ lat: a.lat!, lng: a.lng! });
+                          mapInstanceRef.current.setZoom(15);
+                        }
+                      }}
+                      className={`w-full text-left p-2.5 rounded-lg mb-1.5 text-xs border transition-colors ${
+                        selectedAppt?.id === a.id
+                          ? 'border-orange bg-orange/5'
+                          : isCancelled
+                          ? 'border-gray-100 bg-gray-50 opacity-50'
+                          : 'border-gray-100 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <Clock size={11} className="text-gray-400 flex-shrink-0" />
+                          <span className="font-bold text-gray-600">{a.scheduled_time.slice(0, 5)}</span>
+                        </div>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusColor[a.status] || 'bg-gray-100 text-gray-500'}`}>
+                          {a.status}
+                        </span>
+                      </div>
+                      <div className="font-semibold text-gray-800 mt-1 truncate">
+                        {a.customer ? `${a.customer.first_name} ${a.customer.last_name}` : 'Unknown'}
+                      </div>
+                      <div className="text-gray-400 truncate">
+                        {a.vehicle ? `${a.vehicle.year} ${a.vehicle.make} ${a.vehicle.model}` : ''}
+                      </div>
+                      {!hasCoords && !isCancelled && (
+                        <div className="text-orange text-xs mt-1">⚠ No coordinates — won&apos;t appear on route</div>
+                      )}
+                    </button>
+                  );
+                })}
             </div>
           );
         })}
@@ -314,31 +338,65 @@ export default function MapPage() {
       {/* Map */}
       <div className="flex-1 relative">
         <div ref={mapRef} className="absolute inset-0" />
-        {/* Info window */}
+        {/* Info popup */}
         {selectedAppt && (
-          <div className="absolute top-4 right-4 bg-white rounded-xl shadow-lg border border-gray-100 p-4 w-72 z-10">
-            <button
-              onClick={() => setSelectedAppt(null)}
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-lg"
-            >
-              ×
-            </button>
-            <h3 className="font-semibold text-sm">
-              {selectedAppt.customer
-                ? `${selectedAppt.customer.first_name} ${selectedAppt.customer.last_name}`
-                : 'Unknown'}
-            </h3>
-            <p className="text-xs text-gray-500 mt-1">
-              {selectedAppt.vehicle
-                ? `${selectedAppt.vehicle.year} ${selectedAppt.vehicle.make} ${selectedAppt.vehicle.model}`
-                : ''}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {selectedAppt.scheduled_time.slice(0, 5)}
-            </p>
-            <div className="mt-2">
+          <div className="absolute top-4 right-4 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 w-76 z-10" style={{ width: 288 }}>
+            <button onClick={() => setSelectedAppt(null)}
+              className="absolute top-3 right-3 text-gray-300 hover:text-gray-500 text-xl leading-none">×</button>
+
+            {/* Header */}
+            <div className="pr-6">
+              <div className="font-bold text-navy text-sm">
+                {selectedAppt.customer
+                  ? `${selectedAppt.customer.first_name} ${selectedAppt.customer.last_name}`
+                  : 'Unknown Customer'}
+              </div>
+              <div className="text-xs text-gray-500 mt-0.5">
+                {selectedAppt.vehicle
+                  ? `${selectedAppt.vehicle.year} ${selectedAppt.vehicle.make} ${selectedAppt.vehicle.model}`
+                  : ''}
+              </div>
+            </div>
+
+            {/* Time + Status */}
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs font-bold text-gray-600">{selectedAppt.scheduled_time.slice(0, 5)}</span>
               <StatusBadge status={selectedAppt.status} />
             </div>
+
+            {/* Address */}
+            {selectedAppt.address && (
+              <div className="flex items-start gap-1.5 mt-2">
+                <MapPin size={12} className="text-orange flex-shrink-0 mt-0.5" />
+                <span className="text-xs text-gray-500">{selectedAppt.address}</span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-2 mt-3">
+              <Link href={`/appointments/${selectedAppt.id}`}
+                className="flex-1 flex items-center justify-center gap-1.5 bg-orange text-white rounded-lg py-2 text-xs font-semibold hover:bg-orange/90 transition-colors">
+                <ExternalLink size={12} />
+                View Details
+              </Link>
+              {selectedAppt.address && (
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedAppt.address)}&travelmode=driving`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 bg-navy text-white rounded-lg px-3 py-2 text-xs font-semibold hover:bg-navy/90 transition-colors">
+                  <Navigation size={12} />
+                  Navigate
+                </a>
+              )}
+            </div>
+
+            {/* Click-to-call */}
+            {selectedAppt.customer?.phone && (
+              <a href={`tel:${selectedAppt.customer.phone}`}
+                className="flex items-center gap-2 mt-2 text-xs text-gray-500 hover:text-orange transition-colors">
+                <Phone size={12} />
+                {selectedAppt.customer.phone}
+              </a>
+            )}
           </div>
         )}
       </div>
