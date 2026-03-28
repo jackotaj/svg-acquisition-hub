@@ -9,6 +9,15 @@
   --card-border: #e5e7eb;
   --muted: #6b7280;
   --muted-bg: #f3f4f6;
+  /* Leaderboard */
+  --lb-bg-start: #eef2ff;
+  --lb-bg-mid: #f8fafc;
+  --lb-surface: #ffffff;
+  --lb-surface2: #f8fafc;
+  --lb-border: rgba(0,0,0,0.08);
+  --lb-text: #111827;
+  --lb-text-muted: #6b7280;
+  --lb-text-dim: #9ca3af;
   color-scheme: light;
 }
 
@@ -20,6 +29,15 @@
     --card-border: #2d3148;
     --muted: #94a3b8;
     --muted-bg: #1a1e2e;
+    /* Leaderboard */
+    --lb-bg-start: #0a0a14;
+    --lb-bg-mid: #0f0f1e;
+    --lb-surface: rgba(255,255,255,0.03);
+    --lb-surface2: rgba(255,255,255,0.02);
+    --lb-border: rgba(255,255,255,0.08);
+    --lb-text: #ffffff;
+    --lb-text-muted: rgba(255,255,255,0.4);
+    --lb-text-dim: rgba(255,255,255,0.2);
     color-scheme: dark;
   }
 }
