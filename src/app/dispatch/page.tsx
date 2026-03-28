@@ -114,7 +114,7 @@ export default function DispatchPage() {
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
             className="border border-card-border rounded-lg px-3 py-2 text-sm bg-card text-foreground" />
           <Link href="/acquire/new" className="flex items-center gap-1.5 bg-orange text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-orange/90 transition-colors">
-            <Plus size={15} />+ Schedule
+            <Plus size={15} />Schedule
           </Link>
         </div>
       </div>
