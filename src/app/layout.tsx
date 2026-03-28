@@ -18,9 +18,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="h-full bg-gray-50 flex">
+      <body className="h-full bg-background text-foreground flex">
         <Sidebar />
-        <main className="flex-1 min-h-screen lg:ml-0 overflow-auto">
+        <main className="flex-1 min-h-screen overflow-auto bg-background">
           <div className="p-4 lg:p-6 pt-16 lg:pt-6">{children}</div>
         </main>
       </body>

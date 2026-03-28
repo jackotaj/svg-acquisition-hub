@@ -152,17 +152,17 @@ export default function DayPage() {
         <Link href="/" className="text-gray-400 hover:text-gray-600">
           <ArrowLeft size={18} />
         </Link>
-        <h1 className="text-xl font-bold text-navy">Driver&apos;s Day View</h1>
+        <h1 className="text-xl font-bold text-navy dark:text-white">Driver&apos;s Day View</h1>
       </div>
 
       {/* Controls */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5 flex flex-wrap gap-3 items-end">
+      <div className="bg-card border border-card-border rounded-xl shadow-sm p-4 mb-5 flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[140px]">
           <label className="text-xs font-medium text-gray-500 mb-1 block">Agent</label>
           <select
             value={selectedAgent}
             onChange={e => setSelectedAgent(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-card-border rounded-lg bg-card text-foreground px-3 py-2 text-sm"
           >
             {agents.map(a => (
               <option key={a.id} value={a.id}>{a.name}</option>
@@ -175,17 +175,17 @@ export default function DayPage() {
             type="date"
             value={selectedDate}
             onChange={e => setSelectedDate(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-card-border rounded-lg bg-card text-foreground px-3 py-2 text-sm"
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
+        <div className="bg-card border border-card-border rounded-xl shadow-sm p-10 text-center text-gray-400">
           Building itinerary…
         </div>
       ) : stops.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
+        <div className="bg-card border border-card-border rounded-xl shadow-sm p-10 text-center text-gray-400">
           No appointments for {agentObj?.name || 'this agent'} on {dateLabel}.
           <div className="mt-3">
             <Link href="/appointments/new" className="text-orange text-sm underline">Schedule one</Link>
@@ -230,7 +230,7 @@ export default function DayPage() {
                 <div className="w-0.5 bg-gray-200 flex-1 mt-1" />
               </div>
               <div className="pb-4 pt-1">
-                <div className="font-semibold text-sm text-navy">Base — 3415 Seajay Dr, Beavercreek</div>
+                <div className="font-semibold text-sm text-navy dark:text-white">Base — 3415 Seajay Dr, Beavercreek</div>
                 <div className="text-xs text-gray-400 mt-0.5">
                   Depart {dayStart ? formatTime(dayStart) : '—'}
                 </div>

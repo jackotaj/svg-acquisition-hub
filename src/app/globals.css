@@ -1,15 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f8fafc;
   --foreground: #171717;
   --orange: #f97316;
   --navy: #1a1a2e;
+  --card: #ffffff;
+  --card-border: #e5e7eb;
+  --muted: #6b7280;
+  --muted-bg: #f3f4f6;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1117;
+    --foreground: #f1f5f9;
+    --card: #1e2130;
+    --card-border: #2d3148;
+    --muted: #94a3b8;
+    --muted-bg: #1a1e2e;
+    color-scheme: dark;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-muted: var(--muted);
+  --color-muted-bg: var(--muted-bg);
   --color-orange: #f97316;
   --color-navy: #1a1a2e;
   --font-sans: var(--font-geist-sans);
@@ -19,7 +40,14 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+}
+
+/* Semantic card utility */
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
 }
 
 /* FullCalendar overrides */
@@ -27,34 +55,39 @@ body {
   background-color: #f97316 !important;
   border-color: #f97316 !important;
 }
-
 .fc .fc-button-primary:hover {
   background-color: #ea580c !important;
   border-color: #ea580c !important;
 }
-
 .fc .fc-button-active {
   background-color: #1a1a2e !important;
   border-color: #1a1a2e !important;
 }
-
-.fc .fc-today-button:disabled {
-  opacity: 0.5;
-}
-
+.fc .fc-today-button:disabled { opacity: 0.5; }
 .fc .fc-event {
   border: none !important;
   border-radius: 4px !important;
   padding: 2px 4px !important;
   font-size: 0.8rem !important;
 }
-
 .fc .fc-col-header-cell {
-  background-color: #f8fafc;
   font-weight: 600;
 }
-
 .fc .fc-timegrid-now-indicator-line {
   border-color: #f97316;
   border-width: 2px;
+}
+
+/* Dark mode: FullCalendar */
+@media (prefers-color-scheme: dark) {
+  .fc { color: var(--foreground); }
+  .fc .fc-col-header-cell { background-color: var(--muted-bg); }
+  .fc .fc-scrollgrid, .fc .fc-scrollgrid td, .fc .fc-scrollgrid th {
+    border-color: var(--card-border) !important;
+  }
+  .fc .fc-day-today { background: rgba(249,115,22,0.08) !important; }
+  .fc-theme-standard .fc-popover {
+    background: var(--card);
+    border-color: var(--card-border);
+  }
 }

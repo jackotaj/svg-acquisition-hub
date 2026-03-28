@@ -72,7 +72,7 @@ export default function DispatchPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-navy">Dispatch Board</h1>
+          <h1 className="text-xl font-bold text-navy dark:text-white">Dispatch Board</h1>
           <p className="text-sm text-gray-400">Driver workload, routes, and schedule conflicts</p>
         </div>
         <div className="flex items-center gap-3">
@@ -83,7 +83,7 @@ export default function DispatchPage() {
             </div>
           )}
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange" />
+            className="border border-card-border rounded-lg bg-card text-foreground px-3 py-2 text-sm focus:outline-none focus:border-orange" />
           <Link href="/acquire/new" className="bg-orange text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600">
             + Schedule
           </Link>
@@ -93,7 +93,7 @@ export default function DispatchPage() {
       {loading ? (
         <div className="text-center py-24 text-gray-400">Calculating routes…</div>
       ) : !data || data.agentTimelines.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+        <div className="bg-card border border-card-border rounded-xl shadow-sm p-12 text-center">
           <div className="text-5xl mb-4">📋</div>
           <div className="text-gray-400 font-medium">No scheduled appointments for this day</div>
           <Link href="/acquire/new" className="text-orange text-sm font-semibold mt-3 inline-block hover:underline">
@@ -103,7 +103,7 @@ export default function DispatchPage() {
       ) : (
         <div className="space-y-6">
           {/* Hour ruler */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 pt-4 pb-2">
+          <div className="bg-card border border-card-border rounded-xl shadow-sm px-5 pt-4 pb-2">
             <div className="flex items-center mb-1">
               <div className="w-40 flex-shrink-0" />
               <div className="flex-1 relative h-5">
@@ -125,7 +125,7 @@ export default function DispatchPage() {
 
           {/* Agent timelines */}
           {data.agentTimelines.map(at => (
-            <div key={at.agent.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div key={at.agent.id} className="bg-card border border-card-border rounded-xl shadow-sm overflow-hidden">
               {/* Agent header */}
               <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-4">
                 <div className="w-9 h-9 rounded-xl text-white font-black text-base flex items-center justify-center flex-shrink-0"
@@ -133,7 +133,7 @@ export default function DispatchPage() {
                   {at.agent.name[0]}
                 </div>
                 <div className="flex-1">
-                  <div className="font-bold text-navy">{at.agent.name}</div>
+                  <div className="font-bold text-navy dark:text-white">{at.agent.name}</div>
                   <div className="flex gap-4 text-xs text-gray-400 mt-0.5">
                     <span className="flex items-center gap-1"><Car size={10} /> {at.stops} stops</span>
                     <span className="flex items-center gap-1"><Clock size={10} /> {at.totalDriveMins}min driving</span>
@@ -142,7 +142,7 @@ export default function DispatchPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-gray-400">Est. finish</div>
-                  <div className="font-black text-navy">{at.finishTime}</div>
+                  <div className="font-black text-navy dark:text-white">{at.finishTime}</div>
                 </div>
                 {at.conflicts.length > 0 && (
                   <div className="flex items-center gap-1 bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-2 py-1 rounded-lg">
@@ -159,7 +159,7 @@ export default function DispatchPage() {
                     {/* Base label */}
                     <div className="text-xs font-semibold text-gray-400">Base → Field</div>
                   </div>
-                  <div className="flex-1 relative h-8 bg-gray-50 rounded-lg overflow-hidden">
+                  <div className="flex-1 relative h-8 bg-muted-bg rounded-lg overflow-hidden">
                     {at.timeline.map((block, i) => {
                       const left = Math.max(0, ((block.startMin - DAY_START) / DAY_SPAN) * 100);
                       const width = Math.min(100 - left, ((block.endMin - block.startMin) / DAY_SPAN) * 100);
@@ -202,7 +202,7 @@ export default function DispatchPage() {
                   {at.timeline.filter(b => b.type === 'appraise' && b.appt).map((block, i) => {
                     const a = block.appt!;
                     return (
-                      <div key={a.id} className={`flex items-center gap-3 text-xs p-2 rounded-lg ${block.conflict ? 'bg-red-50 border border-red-100' : 'bg-gray-50'}`}>
+                      <div key={a.id} className={`flex items-center gap-3 text-xs p-2 rounded-lg ${block.conflict ? 'bg-red-900/20 border border-red-800/40' : 'bg-gray-50'}`}>
                         <div className="w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
                           style={{ background: block.conflict ? '#ef4444' : at.agent.color_hex }}>
                           {i + 1}
@@ -229,7 +229,7 @@ export default function DispatchPage() {
 
                 {/* Conflicts */}
                 {at.conflicts.length > 0 && (
-                  <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3">
+                  <div className="mt-3 bg-red-900/20 border border-red-800/40 rounded-lg p-3">
                     <div className="text-xs font-bold text-red-600 mb-1 flex items-center gap-1.5">
                       <AlertTriangle size={11} /> Schedule Issues
                     </div>

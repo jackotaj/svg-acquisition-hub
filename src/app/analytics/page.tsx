@@ -30,7 +30,7 @@ const SOURCE_COLORS: Record<string, string> = {
 
 function StatCard({ label, value, sub, color = '#f97316' }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+    <div className="bg-card border border-card-border rounded-xl shadow-sm p-4">
       <div className="text-2xl font-black" style={{ color }}>{value}</div>
       <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mt-0.5">{label}</div>
       {sub && <div className="text-xs text-gray-300 mt-0.5">{sub}</div>}
@@ -83,7 +83,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-navy">Acquisition Analytics</h1>
+          <h1 className="text-xl font-bold text-navy dark:text-white">Acquisition Analytics</h1>
           <p className="text-sm text-gray-400">{allTime ? 'All time' : monthLabel} · Deep dive into what&apos;s working</p>
         </div>
         <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export default function AnalyticsPage() {
           </button>
           {!allTime && (
             <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-600 focus:outline-none focus:border-orange" />
+              className="border border-card-border rounded-lg bg-card text-foreground px-3 py-1.5 text-xs text-gray-600 focus:outline-none focus:border-orange" />
           )}
           <Link href="/vas/new" className="bg-orange text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600">
             + Log Appointment
@@ -131,7 +131,7 @@ export default function AnalyticsPage() {
         <div>
           {/* ── FUNNEL ── */}
           {tab === 'funnel' && f && (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <div className="bg-card border border-card-border rounded-xl shadow-sm p-6">
               <h2 className="font-bold text-navy mb-1">Conversion Funnel</h2>
               <p className="text-xs text-gray-400 mb-6">Where are we losing people?</p>
               <FunnelBar label="Appointments Booked" count={f.total} total={f.total} color="#6366f1" />
@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
               ) : data.leadSources.map(src => {
                 const color = SOURCE_COLORS[src.source] || '#6b7280';
                 return (
-                  <div key={src.source} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                  <div key={src.source} className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
                       <h3 className="font-bold text-navy text-lg">{src.source}</h3>
@@ -181,7 +181,7 @@ export default function AnalyticsPage() {
                         { label: 'Conversion Rate',  value: `${src.conversionRate}%`, color: '#f97316' },
                         { label: 'Close Rate',       value: `${src.closeRate}%`,   color: '#6366f1' },
                       ].map(s => (
-                        <div key={s.label} className="text-center p-3 bg-gray-50 rounded-lg">
+                        <div key={s.label} className="text-center p-3 bg-muted-bg rounded-lg">
                           <div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div>
                           <div className="text-xs text-gray-400 font-medium">{s.label}</div>
                         </div>
@@ -214,7 +214,7 @@ export default function AnalyticsPage() {
           {/* ── VEHICLE INTEL ── */}
           {tab === 'vehicles' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                 <h3 className="font-bold text-navy mb-1">Top Makes We Acquire</h3>
                 <p className="text-xs text-gray-400 mb-4">Conversion rate shows offer-to-buy</p>
                 {data.vehicles.topMakes.length === 0 ? (
@@ -237,7 +237,7 @@ export default function AnalyticsPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <div className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                   <h3 className="font-bold text-navy mb-1">Mileage Distribution</h3>
                   {data.vehicles.avgMileage > 0 && (
                     <p className="text-xs text-gray-400 mb-3">Avg mileage: <strong>{data.vehicles.avgMileage.toLocaleString()} mi</strong></p>
@@ -262,7 +262,7 @@ export default function AnalyticsPage() {
                   )}
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <div className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                   <h3 className="font-bold text-navy mb-3">Condition</h3>
                   {Object.keys(data.vehicles.conditionMap).length === 0 ? (
                     <div className="text-gray-300 text-sm">No condition data yet.</div>
@@ -284,7 +284,7 @@ export default function AnalyticsPage() {
           {/* ── TIMING ── */}
           {tab === 'timing' && (
             <div className="space-y-5">
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                 <h3 className="font-bold text-navy mb-1">Day of Week Performance</h3>
                 <p className="text-xs text-gray-400 mb-5">Which days produce the most appointments and purchases?</p>
                 <div className="grid grid-cols-7 gap-2">
@@ -311,7 +311,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                 <h3 className="font-bold text-navy mb-1">Best Time Slots</h3>
                 <p className="text-xs text-gray-400 mb-4">When do customers actually buy?</p>
                 {data.timing.hourStats.length === 0 ? (
@@ -348,7 +348,7 @@ export default function AnalyticsPage() {
                 <StatCard label="No Reason Logged" value={data.lostDeals.reasons.find(r => r.reason === 'Unknown')?.count || 0} color="#9ca3af" sub="← Fix this" />
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                 <h3 className="font-bold text-navy mb-1">Why We&apos;re Losing Deals</h3>
                 <p className="text-xs text-gray-400 mb-5">This is your most valuable data. Log reasons every time.</p>
                 {data.lostDeals.reasons.length === 0 || data.lostDeals.total === 0 ? (
@@ -401,7 +401,7 @@ export default function AnalyticsPage() {
                 <StatCard label="Avg Offer" value={data.offers.avgOffer > 0 ? `$${data.offers.avgOffer.toLocaleString()}` : '—'} color="#f97316" />
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-card border border-card-border rounded-xl shadow-sm p-5">
                 <h3 className="font-bold text-navy mb-1">Offer Acceptance Rate</h3>
                 <div className="flex items-center gap-4 my-4">
                   <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
