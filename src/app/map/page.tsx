@@ -13,6 +13,8 @@ export default function MapPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerMapRef = useRef<Map<string, any>>(new Map());
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
   const directionsRenderersRef = useRef<google.maps.DirectionsRenderer[]>([]);
@@ -80,6 +82,7 @@ export default function MapPage() {
     // Clear old markers, polylines, and direction renderers
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
+    markerMapRef.current.clear();
     polylinesRef.current.forEach((p) => p.setMap(null));
     polylinesRef.current = [];
     directionsRenderersRef.current.forEach((r) => r.setMap(null));
@@ -128,8 +131,13 @@ export default function MapPage() {
           },
           zIndex: idx + 1,
         });
-        marker.addListener('click', () => setSelectedAppt(a));
+        marker.addListener('click', () => {
+          setSelectedAppt(a);
+          mapInstanceRef.current?.panTo({ lat: a.lat!, lng: a.lng! });
+          mapInstanceRef.current?.setZoom(14);
+        });
         markersRef.current.push(marker);
+        markerMapRef.current.set(a.id, marker);
       });
 
       // Draw road route using Directions API
@@ -146,17 +154,13 @@ export default function MapPage() {
         });
         directionsRenderersRef.current.push(renderer);
 
+        // Route: Base → all stops → back to Base
         const origin = { lat: BASE_LOCATION.lat, lng: BASE_LOCATION.lng };
-        const destination = appts.length === 1
-          ? { lat: appts[0].lat!, lng: appts[0].lng! }
-          : { lat: appts[appts.length - 1].lat!, lng: appts[appts.length - 1].lng! };
-
-        const waypoints = appts.length > 1
-          ? appts.slice(0, -1).map((a) => ({
-              location: { lat: a.lat!, lng: a.lng! },
-              stopover: true,
-            }))
-          : [];
+        const destination = { lat: BASE_LOCATION.lat, lng: BASE_LOCATION.lng };
+        const waypoints = appts.map((a) => ({
+          location: { lat: a.lat!, lng: a.lng! },
+          stopover: true,
+        }));
 
         directionsService.route(
           {
@@ -276,7 +280,13 @@ export default function MapPage() {
                 .map((a) => (
                   <button
                     key={a.id}
-                    onClick={() => setSelectedAppt(a)}
+                    onClick={() => {
+                      setSelectedAppt(a);
+                      if (a.lat && a.lng && mapInstanceRef.current) {
+                        mapInstanceRef.current.panTo({ lat: a.lat, lng: a.lng });
+                        mapInstanceRef.current.setZoom(14);
+                      }
+                    }}
                     className={`w-full text-left p-2 rounded-lg mb-1 text-xs border transition-colors ${
                       selectedAppt?.id === a.id
                         ? 'border-orange bg-orange/5'
