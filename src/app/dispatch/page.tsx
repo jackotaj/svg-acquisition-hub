@@ -1,274 +1,347 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Clock, Car, CheckCircle } from 'lucide-react';
+import { MapPin, Clock, Navigation, Car, AlertTriangle, CheckCircle, Plus, ExternalLink } from 'lucide-react';
 
 interface Stop {
-  id: string;
-  scheduled_time: string;
-  status: string;
-  outcome: string | null;
-  lat: number | null;
-  lng: number | null;
-  address: string | null;
-  customer: { first_name: string; last_name: string } | null;
-  vehicle: { year: string; make: string; model: string } | null;
-}
-
-interface TimelineBlock {
-  type: 'drive' | 'appraise';
-  startMin: number;
-  endMin: number;
-  label: string;
-  appt?: Stop;
-  conflict?: boolean;
+  appt: {
+    id: string; scheduled_time: string; status: string; outcome: string | null;
+    address: string | null; lat: number | null; lng: number | null;
+    customer: { first_name: string; last_name: string; phone: string | null } | null;
+    vehicle: { year: string; make: string; model: string } | null;
+  };
+  driveMinsBefore: number;
+  arriveMin: number;
+  leaveMin: number;
+  conflict: boolean;
+  lateBy: number;
 }
 
 interface AgentTimeline {
   agent: { id: string; name: string; color_hex: string };
   stops: number;
-  timeline: TimelineBlock[];
   totalDriveMins: number;
   totalAppraisalMins: number;
-  startMin: number;
-  finishMin: number;
   finishTime: string;
+  finishMin: number;
   conflicts: string[];
+  timeline: Array<{
+    type: 'drive' | 'appraise';
+    startMin: number; endMin: number; label: string;
+    appt?: Stop['appt'];
+    conflict?: boolean;
+  }>;
 }
 
-interface DispatchData {
-  date: string;
-  agentTimelines: AgentTimeline[];
-}
-
-function minToTime(min: number) {
+function minToTime(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return `${h > 12 ? h - 12 : h}:${String(m).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hr = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${hr}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function StatusDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    scheduled: 'bg-blue-400',
+    completed: 'bg-green-500',
+    cancelled: 'bg-red-400',
+    arrived: 'bg-yellow-400',
+    appraising: 'bg-yellow-500',
+  };
+  return <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${colors[status] || 'bg-gray-400'}`} />;
+}
+
+function OutcomeBadge({ outcome }: { outcome: string | null }) {
+  if (!outcome) return null;
+  const map: Record<string, { label: string; cls: string }> = {
+    purchased:   { label: '✅ Purchased',   cls: 'bg-green-100 text-green-700' },
+    no_purchase: { label: '❌ No Purchase', cls: 'bg-red-100 text-red-600' },
+    no_show:     { label: '👻 No Show',     cls: 'bg-gray-100 text-gray-500' },
+  };
+  const m = map[outcome];
+  if (!m) return null;
+  return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.cls}`}>{m.label}</span>;
 }
 
 export default function DispatchPage() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [data, setData] = useState<DispatchData | null>(null);
+  const [data, setData] = useState<{ date: string; agentTimelines: AgentTimeline[] } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     setLoading(true);
     fetch(`/api/dispatch?date=${date}`)
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); });
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [date]);
 
-  // Timeline window: 7am to 8pm (420 to 1200)
-  const DAY_START = 420;
-  const DAY_END = 1200;
-  const DAY_SPAN = DAY_END - DAY_START;
+  const timelines = data?.agentTimelines || [];
+  const hasConflicts = timelines.some(t => t.conflicts.length > 0);
 
-  const totalConflicts = (data?.agentTimelines || []).flatMap(a => a.conflicts).length;
+  // Build stop list per agent from timeline
+  function getStops(at: AgentTimeline) {
+    const stops: Array<{ appt: AgentTimeline['timeline'][0]['appt']; driveMin: number; startMin: number; endMin: number; conflict: boolean }> = [];
+    let pendingDrive = 0;
+    for (const block of at.timeline) {
+      if (block.type === 'drive') { pendingDrive = block.endMin - block.startMin; }
+      if (block.type === 'appraise' && block.appt) {
+        stops.push({ appt: block.appt, driveMin: pendingDrive, startMin: block.startMin, endMin: block.endMin, conflict: !!block.conflict });
+        pendingDrive = 0;
+      }
+    }
+    return stops;
+  }
+
+  // Return drive from last stop
+  function getReturnDrive(at: AgentTimeline) {
+    const driveLast = [...at.timeline].reverse().find(b => b.type === 'drive');
+    return driveLast ? driveLast.endMin - driveLast.startMin : 0;
+  }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-3xl mx-auto space-y-6">
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-navy dark:text-white">Dispatch Board</h1>
-          <p className="text-sm text-gray-400">Driver workload, routes, and schedule conflicts</p>
+          <p className="text-muted text-sm mt-0.5">Daily driver itineraries & route planning</p>
         </div>
         <div className="flex items-center gap-3">
-          {totalConflicts > 0 && (
-            <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-3 py-1.5 rounded-lg">
-              <AlertTriangle size={13} />
-              {totalConflicts} conflict{totalConflicts > 1 ? 's' : ''}
-            </div>
-          )}
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="border border-card-border rounded-lg bg-card text-foreground px-3 py-2 text-sm focus:outline-none focus:border-orange" />
-          <Link href="/acquire/new" className="bg-orange text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600">
-            + Schedule
+            className="border border-card-border rounded-lg px-3 py-2 text-sm bg-card text-foreground" />
+          <Link href="/acquire/new" className="flex items-center gap-1.5 bg-orange text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-orange/90 transition-colors">
+            <Plus size={15} />+ Schedule
           </Link>
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-24 text-gray-400">Calculating routes…</div>
-      ) : !data || data.agentTimelines.length === 0 ? (
-        <div className="bg-card border border-card-border rounded-xl shadow-sm p-12 text-center">
-          <div className="text-5xl mb-4">📋</div>
-          <div className="text-gray-400 font-medium">No scheduled appointments for this day</div>
-          <Link href="/acquire/new" className="text-orange text-sm font-semibold mt-3 inline-block hover:underline">
-            + Schedule an acquisition →
+      {/* Conflict banner */}
+      {hasConflicts && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold text-red-700 dark:text-red-400 text-sm mb-1">Schedule Conflicts</div>
+            {timelines.flatMap(t => t.conflicts).map((c, i) => (
+              <div key={i} className="text-red-600 dark:text-red-400 text-xs">• {c}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {loading && (
+        <div className="text-center py-16 text-muted">Loading…</div>
+      )}
+
+      {!loading && timelines.length === 0 && (
+        <div className="bg-card border border-card-border rounded-2xl p-12 text-center">
+          <Car size={40} className="mx-auto text-muted opacity-30 mb-4" />
+          <div className="font-semibold text-foreground mb-1">No appointments scheduled</div>
+          <div className="text-muted text-sm mb-4">Nothing dispatched for {new Date(date + 'T12:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+          <Link href="/acquire/new" className="inline-flex items-center gap-1.5 bg-orange text-white px-4 py-2 rounded-lg text-sm font-semibold">
+            <Plus size={14} />Schedule Acquisition
           </Link>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Hour ruler */}
-          <div className="bg-card border border-card-border rounded-xl shadow-sm px-5 pt-4 pb-2">
-            <div className="flex items-center mb-1">
-              <div className="w-40 flex-shrink-0" />
-              <div className="flex-1 relative h-5">
-                {[7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(h => {
-                  const pct = ((h * 60 - DAY_START) / DAY_SPAN) * 100;
-                  if (pct < 0 || pct > 100) return null;
-                  return (
-                    <div key={h} className="absolute top-0 flex flex-col items-center" style={{ left: `${pct}%` }}>
-                      <div className="w-px h-3 bg-gray-200" />
-                      <span className="text-xs text-gray-300 -translate-x-1/2 mt-0.5">
-                        {h === 12 ? '12p' : h > 12 ? `${h-12}p` : `${h}a`}
-                      </span>
-                    </div>
-                  );
-                })}
+      )}
+
+      {/* Agent route cards */}
+      {timelines.map(at => {
+        const stops = getStops(at);
+        const returnDrive = getReturnDrive(at);
+        const departMin = stops.length > 0 ? stops[0].startMin - stops[0].driveMin : 480;
+
+        return (
+          <div key={at.agent.id} className="bg-card border border-card-border rounded-2xl overflow-hidden shadow-sm">
+
+            {/* Card header */}
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--card-border)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl text-white font-black text-base flex items-center justify-center"
+                  style={{ backgroundColor: at.agent.color_hex }}>
+                  {at.agent.name.charAt(0)}
+                </div>
+                <div>
+                  <div className="font-bold text-foreground">{at.agent.name}</div>
+                  <div className="flex items-center gap-3 text-xs text-muted mt-0.5">
+                    <span>{at.stops} stop{at.stops !== 1 ? 's' : ''}</span>
+                    <span>·</span>
+                    <span>{at.totalDriveMins}min driving</span>
+                    <span>·</span>
+                    <span>{at.totalAppraisalMins}min appraising</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-muted">Est. done</div>
+                <div className="text-lg font-black" style={{ color: at.agent.color_hex }}>{at.finishTime}</div>
               </div>
             </div>
-          </div>
 
-          {/* Agent timelines */}
-          {data.agentTimelines.map(at => (
-            <div key={at.agent.id} className="bg-card border border-card-border rounded-xl shadow-sm overflow-hidden">
-              {/* Agent header */}
-              <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-4">
-                <div className="w-9 h-9 rounded-xl text-white font-black text-base flex items-center justify-center flex-shrink-0"
-                  style={{ background: at.agent.color_hex }}>
-                  {at.agent.name[0]}
-                </div>
-                <div className="flex-1">
-                  <div className="font-bold text-navy dark:text-white">{at.agent.name}</div>
-                  <div className="flex gap-4 text-xs text-gray-400 mt-0.5">
-                    <span className="flex items-center gap-1"><Car size={10} /> {at.stops} stops</span>
-                    <span className="flex items-center gap-1"><Clock size={10} /> {at.totalDriveMins}min driving</span>
-                    <span className="flex items-center gap-1"><CheckCircle size={10} /> {at.totalAppraisalMins}min appraising</span>
+            {/* Itinerary */}
+            <div className="px-5 py-4 space-y-0">
+
+              {/* Depart base */}
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-orange/10 flex items-center justify-center flex-shrink-0">
+                    <MapPin size={14} className="text-orange" />
                   </div>
+                  <div className="w-0.5 bg-card-border flex-1 my-1" style={{ minHeight: 24 }} />
                 </div>
-                <div className="text-right">
-                  <div className="text-xs text-gray-400">Est. finish</div>
-                  <div className="font-black text-navy dark:text-white">{at.finishTime}</div>
+                <div className="pb-4 pt-1">
+                  <div className="text-xs font-bold text-muted uppercase tracking-wide">{minToTime(departMin)}</div>
+                  <div className="font-semibold text-foreground text-sm mt-0.5">Depart Base</div>
+                  <div className="text-xs text-muted">SVG Beavercreek — 3415 Seajay Dr</div>
                 </div>
-                {at.conflicts.length > 0 && (
-                  <div className="flex items-center gap-1 bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-2 py-1 rounded-lg">
-                    <AlertTriangle size={11} />
-                    {at.conflicts.length} conflict{at.conflicts.length > 1 ? 's' : ''}
-                  </div>
-                )}
               </div>
 
-              {/* Gantt bar */}
-              <div className="px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-32 flex-shrink-0">
-                    {/* Base label */}
-                    <div className="text-xs font-semibold text-gray-400">Base → Field</div>
-                  </div>
-                  <div className="flex-1 relative h-8 bg-muted-bg rounded-lg overflow-hidden">
-                    {at.timeline.map((block, i) => {
-                      const left = Math.max(0, ((block.startMin - DAY_START) / DAY_SPAN) * 100);
-                      const width = Math.min(100 - left, ((block.endMin - block.startMin) / DAY_SPAN) * 100);
-                      if (width <= 0) return null;
-                      return (
-                        <div key={i}
-                          className="absolute top-1 bottom-1 rounded flex items-center justify-center text-xs font-bold text-white overflow-hidden"
-                          style={{
-                            left: `${left}%`,
-                            width: `${Math.max(width, 0.5)}%`,
-                            background: block.type === 'drive'
-                              ? `${at.agent.color_hex}55`
-                              : block.conflict
-                              ? '#ef4444'
-                              : at.agent.color_hex,
-                          }}
-                          title={block.label}
-                        >
-                          {width > 4 && block.type === 'appraise' && !block.conflict && '🔧'}
-                          {width > 4 && block.type === 'appraise' && block.conflict && '⚠️'}
-                          {width > 4 && block.type === 'drive' && '→'}
-                        </div>
-                      );
-                    })}
+              {/* Each stop */}
+              {stops.map((stop, idx) => {
+                const appt = stop.appt;
+                const navUrl = appt?.address
+                  ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(appt.address)}&travelmode=driving`
+                  : null;
+                const isLast = idx === stops.length - 1;
 
-                    {/* Current time indicator */}
-                    {(() => {
-                      const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
-                      if (date === new Date().toISOString().split('T')[0] && nowMins >= DAY_START && nowMins <= DAY_END) {
-                        const pct = ((nowMins - DAY_START) / DAY_SPAN) * 100;
-                        return <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style={{ left: `${pct}%` }} title="Now" />;
-                      }
-                      return null;
-                    })()}
-                  </div>
-                </div>
-
-                {/* Stop list */}
-                <div className="mt-3 space-y-1.5">
-                  {at.timeline.filter(b => b.type === 'appraise' && b.appt).map((block, i) => {
-                    const a = block.appt!;
-                    return (
-                      <div key={a.id} className={`flex items-center gap-3 text-xs p-2 rounded-lg ${block.conflict ? 'bg-red-900/20 border border-red-800/40' : 'bg-gray-50'}`}>
-                        <div className="w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
-                          style={{ background: block.conflict ? '#ef4444' : at.agent.color_hex }}>
-                          {i + 1}
+                return (
+                  <div key={appt?.id || idx}>
+                    {/* Drive leg */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-0.5 bg-card-border flex-1" style={{ minHeight: 8 }} />
+                        <div className="w-6 h-6 rounded-full bg-muted-bg flex items-center justify-center flex-shrink-0 my-1">
+                          <Car size={11} className="text-muted" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-gray-700">
-                            {a.customer ? `${a.customer.first_name} ${a.customer.last_name}` : 'Unknown'}
-                          </span>
-                          <span className="text-gray-400 ml-2">
-                            {a.vehicle ? `${a.vehicle.year} ${a.vehicle.make}` : ''}
-                          </span>
-                          {a.address && <span className="text-gray-300 ml-2 truncate">· {a.address}</span>}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-gray-400">{a.scheduled_time.slice(0,5)}</span>
-                          <span className="text-gray-300">→</span>
-                          <span className="font-semibold" style={{ color: at.agent.color_hex }}>{minToTime(block.endMin)}</span>
-                          {block.conflict && <span className="text-red-500 font-bold">⚠️ Late</span>}
+                        <div className="w-0.5 bg-card-border flex-1" style={{ minHeight: 8 }} />
+                      </div>
+                      <div className="py-2">
+                        <div className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block ${stop.conflict ? 'bg-red-100 text-red-600' : 'bg-muted-bg text-muted'}`}>
+                          {stop.conflict ? `⚠ ${stop.driveMin}min drive — running late` : `${stop.driveMin}min drive`}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-
-                {/* Conflicts */}
-                {at.conflicts.length > 0 && (
-                  <div className="mt-3 bg-red-900/20 border border-red-800/40 rounded-lg p-3">
-                    <div className="text-xs font-bold text-red-600 mb-1 flex items-center gap-1.5">
-                      <AlertTriangle size={11} /> Schedule Issues
                     </div>
-                    {at.conflicts.map((c, i) => (
-                      <div key={i} className="text-xs text-red-500">• {c}</div>
-                    ))}
+
+                    {/* Stop card */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 h-8 rounded-full text-white text-sm font-black flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: at.agent.color_hex }}>
+                          {idx + 1}
+                        </div>
+                        {!isLast && <div className="w-0.5 bg-card-border flex-1 my-1" style={{ minHeight: 24 }} />}
+                        {isLast && returnDrive > 0 && <div className="w-0.5 bg-card-border flex-1 my-1" style={{ minHeight: 24 }} />}
+                      </div>
+                      <div className={`pb-4 pt-1 flex-1 p-3 rounded-xl mb-2 border ${stop.conflict ? 'border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/10' : 'border-card-border bg-muted-bg'}`}
+                        style={{ marginLeft: 0 }}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-muted">{minToTime(stop.startMin)}</span>
+                              <StatusDot status={appt?.status || 'scheduled'} />
+                              <span className="text-xs text-muted capitalize">{appt?.status}</span>
+                              {appt?.outcome && <OutcomeBadge outcome={appt.outcome} />}
+                            </div>
+                            <div className="font-bold text-foreground mt-1">
+                              {appt?.customer ? `${appt.customer.first_name} ${appt.customer.last_name}` : 'Unknown Customer'}
+                            </div>
+                            <div className="text-sm text-muted">
+                              {appt?.vehicle ? `${appt.vehicle.year} ${appt.vehicle.make} ${appt.vehicle.model}` : ''}
+                            </div>
+                            {appt?.address && (
+                              <div className="flex items-center gap-1 mt-1.5 text-xs text-muted">
+                                <MapPin size={11} className="flex-shrink-0" />
+                                <span className="truncate">{appt.address}</span>
+                              </div>
+                            )}
+                            {appt?.customer?.phone && (
+                              <a href={`tel:${appt.customer.phone}`} className="flex items-center gap-1 mt-1 text-xs text-orange hover:underline">
+                                📞 {appt.customer.phone}
+                              </a>
+                            )}
+                            {!appt?.address && (
+                              <div className="text-xs text-orange mt-1">⚠ No address — not on map route</div>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-1.5 flex-shrink-0">
+                            {appt?.id && (
+                              <Link href={`/appointments/${appt.id}`}
+                                className="flex items-center gap-1 text-xs text-orange font-semibold hover:underline">
+                                <ExternalLink size={11} />Details
+                              </Link>
+                            )}
+                            {navUrl && (
+                              <a href={navUrl} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+                                <Navigation size={11} />Navigate
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-card-border text-xs text-muted">
+                          <span>⏱ 45min appraisal</span>
+                          <span>·</span>
+                          <span>Done by {minToTime(stop.endMin)}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+                );
+              })}
 
-              {/* Utilization bar */}
-              <div className="px-5 pb-4">
-                <div className="flex gap-2 text-xs text-gray-400 mb-1.5">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ background: at.agent.color_hex }} />Appraising {at.totalAppraisalMins}min</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ background: `${at.agent.color_hex}55` }} />Driving {at.totalDriveMins}min</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-gray-200 inline-block" />Available {Math.max(0, (at.finishMin - at.startMin) - at.totalDriveMins - at.totalAppraisalMins)}min</span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
-                  {(() => {
-                    const total = Math.max(at.finishMin - at.startMin, 1);
-                    const appraisePct = (at.totalAppraisalMins / total) * 100;
-                    const drivePct = (at.totalDriveMins / total) * 100;
-                    return <>
-                      <div className="h-full rounded-l-full" style={{ width: `${appraisePct}%`, background: at.agent.color_hex }} />
-                      <div className="h-full" style={{ width: `${drivePct}%`, background: `${at.agent.color_hex}55` }} />
-                    </>;
-                  })()}
-                </div>
-              </div>
+              {/* Return to base */}
+              {returnDrive > 0 && (
+                <>
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-0.5 bg-card-border" style={{ minHeight: 8 }} />
+                      <div className="w-6 h-6 rounded-full bg-muted-bg flex items-center justify-center flex-shrink-0 my-1">
+                        <Car size={11} className="text-muted" />
+                      </div>
+                      <div className="w-0.5 bg-card-border" style={{ minHeight: 8 }} />
+                    </div>
+                    <div className="py-2">
+                      <div className="text-xs font-medium px-2 py-0.5 rounded-full inline-block bg-muted-bg text-muted">
+                        {returnDrive}min return drive
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle size={14} className="text-green-600" />
+                      </div>
+                    </div>
+                    <div className="pt-1">
+                      <div className="text-xs font-bold text-muted uppercase tracking-wide">{at.finishTime}</div>
+                      <div className="font-semibold text-foreground text-sm mt-0.5">Return to Base</div>
+                      <div className="text-xs text-muted">Day complete</div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-          ))}
 
-          {/* Legend */}
-          <div className="flex items-center gap-5 text-xs text-gray-400 px-2">
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-orange inline-block" />Appraising</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-orange/30 inline-block" />Driving</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-400 inline-block" />Conflict</span>
-            <span className="flex items-center gap-1.5"><span className="w-0.5 h-3 bg-red-500 inline-block" />Now</span>
+            {/* Footer stats */}
+            <div className="px-5 py-3 flex gap-6 text-xs" style={{ borderTop: '1px solid var(--card-border)', background: 'var(--muted-bg)' }}>
+              <div><span className="text-muted">Start</span> <span className="font-bold text-foreground">{minToTime(departMin)}</span></div>
+              <div><span className="text-muted">Driving</span> <span className="font-bold text-foreground">{at.totalDriveMins}min</span></div>
+              <div><span className="text-muted">Appraising</span> <span className="font-bold text-foreground">{at.totalAppraisalMins}min</span></div>
+              <div><span className="text-muted">Done</span> <span className="font-bold" style={{ color: at.agent.color_hex }}>{at.finishTime}</span></div>
+            </div>
           </div>
+        );
+      })}
+
+      {/* Legend */}
+      {timelines.length > 0 && (
+        <div className="flex items-center gap-4 text-xs text-muted pb-4">
+          <span className="flex items-center gap-1.5"><Car size={11} /> Drive segment</span>
+          <span className="flex items-center gap-1.5"><MapPin size={11} className="text-orange" /> Appraisal stop</span>
+          <span className="flex items-center gap-1.5"><CheckCircle size={11} className="text-green-500" /> Return to base</span>
+          <span className="flex items-center gap-1.5"><AlertTriangle size={11} className="text-red-500" /> Conflict</span>
         </div>
       )}
     </div>
