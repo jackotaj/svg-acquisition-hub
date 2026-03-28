@@ -106,7 +106,7 @@ export default function LeaderboardPage() {
               </button>
             ))}
           </div>
-          <Link href="/vas/new" className="bg-orange text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange/90 transition-colors">
+          <Link href="/acquire/new" className="bg-orange text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange/90 transition-colors">
             + Log Appointment
           </Link>
           <input type="month" value={month} onChange={e => setMonth(e.target.value)}

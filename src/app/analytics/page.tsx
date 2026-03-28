@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
             <input type="month" value={month} onChange={e => setMonth(e.target.value)}
               className="border border-card-border rounded-lg bg-card text-foreground px-3 py-1.5 text-xs text-gray-600 focus:outline-none focus:border-orange" />
           )}
-          <Link href="/vas/new" className="bg-orange text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600">
+          <Link href="/acquire/new" className="bg-orange text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600">
             + Log Appointment
           </Link>
         </div>

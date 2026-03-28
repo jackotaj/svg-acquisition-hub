@@ -72,7 +72,7 @@ export default function RepPage({ params }: { params: Promise<{ rep: string }> }
             <p className="text-sm text-gray-400">Vehicle Acquisition Specialist</p>
           </div>
         </div>
-        <Link href="/vas/new" className="ml-auto bg-orange text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600">
+        <Link href="/acquire/new" className="ml-auto bg-orange text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600">
           + Log Appointment
         </Link>
       </div>

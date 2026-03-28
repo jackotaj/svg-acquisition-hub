@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
@@ -38,6 +38,7 @@ interface FormData {
   vehicle_year: string;
   vehicle_make: string;
   vehicle_model: string;
+  vehicle_vin: string;
   scheduled_date: string;
   scheduled_time: string;
   address: string;
@@ -52,7 +53,7 @@ interface FormData {
 
 const EMPTY: FormData = {
   vas_rep: '', lead_source: '', first_name: '', last_name: '', phone: '',
-  vehicle_year: '', vehicle_make: '', vehicle_model: '',
+  vehicle_year: '', vehicle_make: '', vehicle_model: '', vehicle_vin: '',
   scheduled_date: new Date().toISOString().split('T')[0],
   scheduled_time: '10:00',
   address: '', outcome: '', purchase_amount: '', notes: '',
@@ -66,6 +67,20 @@ export default function VasNewPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [dupWarning, setDupWarning] = useState<string | null>(null);
+
+  // Duplicate VIN check — warn if same rep + same VIN already exists
+  useEffect(() => {
+    const vin = form.vehicle_vin.trim().toUpperCase();
+    if (vin.length < 8 || !form.vas_rep) { setDupWarning(null); return; }
+    const timer = setTimeout(() => {
+      fetch(`/api/appointments/check-dup?vin=${encodeURIComponent(vin)}&rep=${encodeURIComponent(form.vas_rep)}`)
+        .then(r => r.json())
+        .then(d => setDupWarning(d.duplicate ? d.message : null))
+        .catch(() => {});
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [form.vehicle_vin, form.vas_rep]);
 
   const set = (key: keyof FormData, val: string) => setForm(p => ({ ...p, [key]: val }));
 
@@ -97,6 +112,7 @@ export default function VasNewPage() {
           year: form.vehicle_year ? parseInt(form.vehicle_year) : null,
           make: form.vehicle_make,
           model: form.vehicle_model || null,
+          vin: form.vehicle_vin.trim().toUpperCase() || null,
           mileage: form.mileage ? parseInt(form.mileage.replace(/[^0-9]/g, '')) : null,
           condition: form.condition || null,
         }),
@@ -244,6 +260,18 @@ export default function VasNewPage() {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
                 placeholder="Highlander" />
             </div>
+          </div>
+          <div className="mb-4">
+            <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">VIN</label>
+            <input value={form.vehicle_vin} onChange={e => set('vehicle_vin', e.target.value.toUpperCase())}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange font-mono tracking-wider"
+              placeholder="1HGBH41JXMN109186" maxLength={17} />
+            {dupWarning && (
+              <div className="mt-2 flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+                <span className="text-yellow-600 text-sm">⚠️</span>
+                <span className="text-yellow-700 text-xs font-medium">{dupWarning}</span>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
