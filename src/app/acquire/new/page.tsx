@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
+import AddressSearch from '@/components/AddressSearch';
 
 const VAS_REPS = ['Bianka', 'David', 'Other'];
 const LEAD_SOURCES = ['Facebook', 'Craigslist', 'Instagram', 'CarGurus', 'Walk-In', 'Referral', 'Other'];
@@ -61,6 +62,7 @@ const EMPTY: FormData = {
 export default function VasNewPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormData>(EMPTY);
+  const [coords, setCoords] = useState<{ lat: number | null; lng: number | null }>({ lat: null, lng: null });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -117,6 +119,8 @@ export default function VasNewPage() {
           scheduled_date: form.scheduled_date,
           scheduled_time: form.scheduled_time + ':00',
           address: form.address || null,
+          lat: coords.lat,
+          lng: coords.lng,
           vas_rep: form.vas_rep,
           lead_source: form.lead_source || null,
           outcome: form.outcome || null,
@@ -274,11 +278,13 @@ export default function VasNewPage() {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange" />
             </div>
           </div>
-          <div>
+          <div className="relative">
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Location / Address</label>
-            <input value={form.address} onChange={e => set('address', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
-              placeholder="SVG Beavercreek or 123 Main St, Dayton OH" />
+            <AddressSearch
+              value={form.address}
+              onChange={(addr, lat, lng) => { set('address', addr); setCoords({ lat, lng }); }}
+              placeholder="SVG Beavercreek or 123 Main St, Dayton OH"
+            />
           </div>
         </div>
 
