@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { syncApptToSheet } from '@/lib/sheets';
 
 async function geocodeAddress(address: string, city: string, state: string, zip: string): Promise<{ lat: number; lng: number } | null> {
   try {
@@ -70,6 +71,8 @@ export async function POST(request: NextRequest) {
       .select('*, customer:acq_customers(*), vehicle:acq_vehicles(*)')
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Fire-and-forget sheet sync
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) syncApptToSheet(data).catch(console.error);
     return NextResponse.json(data, { status: 201 });
   }
 
@@ -132,6 +135,9 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (apptErr) return NextResponse.json({ error: apptErr.message }, { status: 500 });
+
+  // Fire-and-forget sheet sync
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) syncApptToSheet(appt).catch(console.error);
 
   return NextResponse.json(appt, { status: 201 });
 }
