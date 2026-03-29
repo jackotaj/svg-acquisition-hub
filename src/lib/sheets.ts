@@ -11,9 +11,10 @@ const REP_SHEET_MAP: Record<string, string> = {
   'David':  'DAVID',
   'Other':  'Bianka', // fallback
 };
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 
-async function getAccessToken(): Promise<string> {
+async function getAccessToken(scopes = [SHEETS_SCOPE]): Promise<string> {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!raw) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON not set');
 
@@ -23,7 +24,7 @@ async function getAccessToken(): Promise<string> {
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
   const payload = Buffer.from(JSON.stringify({
     iss: sa.client_email,
-    scope: SCOPES.join(' '),
+    scope: scopes.join(' '),
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600,
@@ -47,6 +48,8 @@ async function getAccessToken(): Promise<string> {
   if (!data.access_token) throw new Error(`Auth failed: ${JSON.stringify(data)}`);
   return data.access_token;
 }
+
+export { DRIVE_SCOPE, SHEETS_SCOPE };
 
 async function sheetsRequest(path: string, method = 'GET', body?: unknown) {
   const token = await getAccessToken();
@@ -203,6 +206,72 @@ export async function fullResync(appts: Record<string, any>[]) {
     console.error('Full resync error:', err);
     return { ok: false, error: String(err) };
   }
+}
+
+/**
+ * Read all rows from Bianka + DAVID tabs, map by COLUMNS positions.
+ * Returns objects keyed by field name (id, status, outcome, notes, etc.)
+ */
+export async function readAllSheetRows(): Promise<Record<string, string>[]> {
+  const token = await getAccessToken();
+  const tabs = ['Bianka', 'DAVID'];
+  const allRows: Record<string, string>[] = [];
+
+  for (const tab of tabs) {
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(tab)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    const rows: string[][] = data.values || [];
+    if (rows.length < 2) continue;
+
+    for (let i = 1; i < rows.length; i++) {
+      const row: Record<string, string> = {};
+      for (let j = 0; j < COLUMNS.length; j++) {
+        row[COLUMNS[j]] = rows[i]?.[j] || '';
+      }
+      if (row.id) allRows.push(row);
+    }
+  }
+  return allRows;
+}
+
+/**
+ * Register a Google Drive push-notification watch on the spreadsheet.
+ * Google will POST to `webhookUrl` whenever the sheet changes.
+ * Watch expires after ~7 days — call this again to renew.
+ */
+export async function registerDriveWatch(webhookUrl: string, channelId: string) {
+  const token = await getAccessToken([DRIVE_SCOPE]);
+  const expiry = Date.now() + 6 * 24 * 60 * 60 * 1000; // 6 days
+
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${SPREADSHEET_ID}/watch`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: channelId,
+        type: 'web_hook',
+        address: webhookUrl,
+        expiration: expiry,
+      }),
+    }
+  );
+  return res.json();
+}
+
+/**
+ * Stop a Drive watch channel (cleanup / before re-registering)
+ */
+export async function stopDriveWatch(channelId: string, resourceId: string) {
+  const token = await getAccessToken([DRIVE_SCOPE]);
+  await fetch('https://www.googleapis.com/drive/v3/channels/stop', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: channelId, resourceId }),
+  });
 }
 
 export { COLUMNS, apptToRow };
