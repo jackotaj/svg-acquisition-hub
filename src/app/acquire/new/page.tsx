@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import AddressSearch from '@/components/AddressSearch';
 
-const VAS_REPS = ['Bianka', 'David', 'Other'];
+// VAS_REPS loaded dynamically from sheet tabs — see useEffect below
+const VAS_REPS_FALLBACK = ['Bianka', 'David'];
 const LEAD_SOURCES = ['Facebook', 'Craigslist', 'Instagram', 'CarGurus', 'Walk-In', 'Referral', 'Other'];
 const OUTCOMES = [
   { value: '',            label: '— Not yet —' },
@@ -68,6 +69,15 @@ export default function VasNewPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [dupWarning, setDupWarning] = useState<string | null>(null);
+  const [vasReps, setVasReps] = useState<string[]>(VAS_REPS_FALLBACK);
+
+  // Load VAS reps dynamically from sheet tabs
+  useEffect(() => {
+    fetch('/api/sheets/webhook')
+      .then(r => r.json())
+      .then(d => { if (d.tabs?.length) setVasReps(d.tabs); })
+      .catch(() => {});
+  }, []);
 
   // Duplicate VIN check — warn if same rep + same VIN already exists
   useEffect(() => {
@@ -199,7 +209,8 @@ export default function VasNewPage() {
               <select value={form.vas_rep} onChange={e => set('vas_rep', e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
                 <option value="">Select rep</option>
-                {VAS_REPS.map(r => <option key={r}>{r}</option>)}
+                <option value="">— Select Rep —</option>
+                {vasReps.map(r => <option key={r}>{r}</option>)}
               </select>
             </div>
             <div>

@@ -5,12 +5,46 @@
  */
 
 const SPREADSHEET_ID = '1TOoTsmLHOEMsKHrfofS99-SU_7rh_i0EJbvDONpFRBI';
-// Sheet has per-rep tabs: "Bianka", "DAVID" — maps rep name → sheet tab name
-const REP_SHEET_MAP: Record<string, string> = {
-  'Bianka': 'Bianka',
-  'David':  'DAVID',
-  'Other':  'Bianka', // fallback
-};
+
+// Tabs that are NOT VAS rep tabs (skip during sync)
+const SKIP_TABS = ['Table Template', 'Sheet1', 'Overview', 'Summary', 'Instructions', 'README'];
+
+/**
+ * Fetch all sheet tab names from the spreadsheet, excluding non-rep tabs.
+ * Cached for 60s in module scope to avoid hammering the API.
+ */
+let _tabsCache: { tabs: string[]; ts: number } | null = null;
+
+export async function getSheetTabs(forceRefresh = false): Promise<string[]> {
+  if (!forceRefresh && _tabsCache && Date.now() - _tabsCache.ts < 60_000) {
+    return _tabsCache.tabs;
+  }
+  const token = await getAccessToken();
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties.title`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await res.json();
+  const tabs: string[] = (data.sheets || [])
+    .map((s: { properties: { title: string } }) => s.properties.title)
+    .filter((t: string) => !SKIP_TABS.some(skip => t.toLowerCase() === skip.toLowerCase()));
+  _tabsCache = { tabs, ts: Date.now() };
+  return tabs;
+}
+
+/** Map a vas_rep name to the best-matching sheet tab (case-insensitive prefix match) */
+async function repToTab(vasRep: string): Promise<string | null> {
+  const tabs = await getSheetTabs();
+  // Exact match first
+  const exact = tabs.find(t => t.toLowerCase() === vasRep.toLowerCase());
+  if (exact) return exact;
+  // Prefix match (e.g. "David" matches "DAVID")
+  const prefix = tabs.find(t =>
+    t.toLowerCase().startsWith(vasRep.toLowerCase().slice(0, 4)) ||
+    vasRep.toLowerCase().startsWith(t.toLowerCase().slice(0, 4))
+  );
+  return prefix || tabs[0] || null; // fallback to first tab
+}
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 
@@ -135,7 +169,7 @@ async function ensureHeader(token: string, sheetTab: string) {
 export async function syncApptToSheet(appt: Record<string, any>) {
   try {
     const token = await getAccessToken();
-    const sheetTab = REP_SHEET_MAP[appt.vas_rep] || 'Bianka';
+    const sheetTab = (await repToTab(appt.vas_rep || '')) || 'Bianka';
     await ensureHeader(token, sheetTab);
 
     // Read all IDs in this tab
@@ -175,22 +209,22 @@ export async function syncApptToSheet(appt: Record<string, any>) {
   }
 }
 
-/** Full resync — write all appointments to per-rep sheet tabs */
+/** Full resync — write all appointments to per-rep sheet tabs (dynamically discovered) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fullResync(appts: Record<string, any>[]) {
   try {
     const token = await getAccessToken();
 
-    // Group by rep
+    // Group by resolved tab name
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const byRep: Record<string, Record<string, any>[]> = {};
+    const byTab: Record<string, Record<string, any>[]> = {};
     for (const appt of appts) {
-      const tab = REP_SHEET_MAP[appt.vas_rep] || 'Bianka';
-      if (!byRep[tab]) byRep[tab] = [];
-      byRep[tab].push(appt);
+      const tab = (await repToTab(appt.vas_rep || '')) || 'Bianka';
+      if (!byTab[tab]) byTab[tab] = [];
+      byTab[tab].push(appt);
     }
 
-    for (const [tab, repAppts] of Object.entries(byRep)) {
+    for (const [tab, repAppts] of Object.entries(byTab)) {
       const rows = [HEADER_ROW, ...repAppts.map(apptToRow)];
       await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(tab)}!A1:Z${rows.length}?valueInputOption=RAW`,
@@ -214,7 +248,7 @@ export async function fullResync(appts: Record<string, any>[]) {
  */
 export async function readAllSheetRows(): Promise<Record<string, string>[]> {
   const token = await getAccessToken();
-  const tabs = ['Bianka', 'DAVID'];
+  const tabs = await getSheetTabs(true); // force-refresh to catch new tabs
   const allRows: Record<string, string>[] = [];
 
   for (const tab of tabs) {
