@@ -4,73 +4,25 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Phone, Mail, MapPin, Clock, Car, User, CheckCircle } from 'lucide-react';
 
-const BASE_LAT = 39.7174;
-const BASE_LNG = -84.0639;
-
-// OSM-based route map — works with or without lat/lng stored on the appointment
-function RouteMapCard({ appt }: { appt: { address: string; city?: string; state?: string; zip?: string; lat?: number | null; lng?: number | null } }) {
-  const [destLat, setDestLat] = useState<number | null>(appt.lat ?? null);
-  const [destLng, setDestLng] = useState<number | null>(appt.lng ?? null);
-  const [loading, setLoading] = useState(!appt.lat);
-
+// OSM map — uses address string directly, no geocoding or lat/lng needed
+function RouteMapCard({ appt }: { appt: { address: string; city?: string; state?: string; zip?: string } }) {
   const fullAddress = [appt.address, appt.city, appt.state, appt.zip].filter(Boolean).join(', ');
   const gmapsUrl = `https://www.google.com/maps/dir/3415+Seajay+Dr,+Beavercreek,+OH+45430/${encodeURIComponent(fullAddress)}`;
-
-  useEffect(() => {
-    if (destLat && destLng) { setLoading(false); return; }
-    // Geocode via Nominatim
-    const q = encodeURIComponent(fullAddress);
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=1`, {
-      headers: { 'Accept-Language': 'en', 'User-Agent': 'SVGAcquisitionHub/1.0' },
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data[0]) { setDestLat(parseFloat(data[0].lat)); setDestLng(parseFloat(data[0].lon)); }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Build OSM iframe bbox to show both base + destination
-  const osmSrc = destLat && destLng
-    ? (() => {
-        const minLat = Math.min(BASE_LAT, destLat) - 0.05;
-        const maxLat = Math.max(BASE_LAT, destLat) + 0.05;
-        const minLng = Math.min(BASE_LNG, destLng) - 0.05;
-        const maxLng = Math.max(BASE_LNG, destLng) + 0.05;
-        const marker1 = `${BASE_LNG},${BASE_LAT}`;
-        const marker2 = `${destLng},${destLat}`;
-        return `https://www.openstreetmap.org/export/embed.html?bbox=${minLng},${minLat},${maxLng},${maxLat}&layer=mapnik&marker=${marker1}&marker=${marker2}`;
-      })()
-    : null;
+  const osmSrc = `https://www.openstreetmap.org/export/embed.html?query=${encodeURIComponent(fullAddress)}&layer=mapnik`;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
         <div className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-[#f97316]" /> Route from Base
+          <MapPin className="w-4 h-4 text-[#f97316]" /> Location
         </div>
         <a href={gmapsUrl} target="_blank" rel="noopener noreferrer"
-          className="text-xs text-[#f97316] hover:underline flex items-center gap-1">
-          Open in Maps ↗
+          className="text-xs text-[#f97316] hover:underline">
+          Get Directions ↗
         </a>
       </div>
-      {loading ? (
-        <div className="h-[220px] flex items-center justify-center text-sm text-slate-400">Loading map…</div>
-      ) : osmSrc ? (
-        <iframe title="Route Map" src={osmSrc} width="100%" height="220"
-          style={{ border: 0, display: 'block' }} loading="lazy" />
-      ) : (
-        <div className="h-[220px] flex flex-col items-center justify-center gap-3 text-sm text-slate-400">
-          <MapPin className="w-6 h-6" />
-          <span>Could not geocode address</span>
-          <a href={gmapsUrl} target="_blank" rel="noopener noreferrer"
-            className="px-4 py-2 bg-[#f97316] text-white rounded-lg text-xs font-medium">
-            Open in Google Maps ↗
-          </a>
-        </div>
-      )}
+      <iframe title="Map" src={osmSrc} width="100%" height="220"
+        style={{ border: 0, display: 'block' }} loading="lazy" />
     </div>
   );
 }
