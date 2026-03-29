@@ -4,11 +4,52 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Phone, Mail, MapPin, Clock, Car, User, CheckCircle } from 'lucide-react';
 
-// OSM map — uses address string directly, no geocoding or lat/lng needed
-function RouteMapCard({ appt }: { appt: { address: string; city?: string; state?: string; zip?: string } }) {
+const BASE_LAT = 39.7174;
+const BASE_LNG = -84.0639;
+
+function RouteMapCard({ appt }: {
+  appt: { id: string; address: string; city?: string; state?: string; zip?: string; lat?: number | null; lng?: number | null }
+}) {
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+    appt.lat && appt.lng ? { lat: appt.lat, lng: appt.lng } : null
+  );
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(appt.lat && appt.lng ? 'ready' : 'loading');
+
   const fullAddress = [appt.address, appt.city, appt.state, appt.zip].filter(Boolean).join(', ');
   const gmapsUrl = `https://www.google.com/maps/dir/3415+Seajay+Dr,+Beavercreek,+OH+45430/${encodeURIComponent(fullAddress)}`;
-  const osmSrc = `https://www.openstreetmap.org/export/embed.html?query=${encodeURIComponent(fullAddress)}&layer=mapnik`;
+
+  useEffect(() => {
+    if (coords) return;
+    fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=us`,
+      { headers: { 'Accept-Language': 'en', 'User-Agent': 'SVGAcquisitionHub/1.0' } }
+    )
+      .then(r => r.json())
+      .then(data => {
+        if (!data[0]) { setStatus('error'); return; }
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        setCoords({ lat, lng });
+        setStatus('ready');
+        // Save coords back to DB so next load is instant
+        fetch(`/api/appointments/${appt.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lng }),
+        }).catch(() => {});
+      })
+      .catch(() => setStatus('error'));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const osmSrc = coords ? (() => {
+    const pad = 0.06;
+    const minLat = Math.min(BASE_LAT, coords.lat) - pad;
+    const maxLat = Math.max(BASE_LAT, coords.lat) + pad;
+    const minLng = Math.min(BASE_LNG, coords.lng) - pad;
+    const maxLng = Math.max(BASE_LNG, coords.lng) + pad;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${minLng},${minLat},${maxLng},${maxLat}&layer=mapnik&marker=${coords.lat},${coords.lng}`;
+  })() : null;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -21,8 +62,24 @@ function RouteMapCard({ appt }: { appt: { address: string; city?: string; state?
           Get Directions ↗
         </a>
       </div>
-      <iframe title="Map" src={osmSrc} width="100%" height="220"
-        style={{ border: 0, display: 'block' }} loading="lazy" />
+      {status === 'loading' && (
+        <div className="h-[220px] flex items-center justify-center text-sm text-slate-400 animate-pulse">
+          Locating address…
+        </div>
+      )}
+      {status === 'ready' && osmSrc && (
+        <iframe title="Map" src={osmSrc} width="100%" height="220"
+          style={{ border: 0, display: 'block' }} loading="lazy" />
+      )}
+      {status === 'error' && (
+        <div className="h-[220px] flex flex-col items-center justify-center gap-3">
+          <p className="text-sm text-slate-400">Couldn&apos;t locate address — open in Maps instead</p>
+          <a href={gmapsUrl} target="_blank" rel="noopener noreferrer"
+            className="px-4 py-2 bg-[#f97316] text-white rounded-lg text-sm font-medium">
+            Get Directions in Google Maps ↗
+          </a>
+        </div>
+      )}
     </div>
   );
 }
