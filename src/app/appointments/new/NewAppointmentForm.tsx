@@ -157,30 +157,30 @@ export default function NewAppointmentForm() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">First Name <span className="text-red-500">*</span></label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.first_name}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.first_name}
                   onChange={e => setCustomer(p => ({...p, first_name: e.target.value}))} placeholder="John" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Last Name <span className="text-red-500">*</span></label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.last_name}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.last_name}
                   onChange={e => setCustomer(p => ({...p, last_name: e.target.value}))} placeholder="Smith" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.phone} type="tel"
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.phone} type="tel"
                   onChange={e => setCustomer(p => ({...p, phone: e.target.value}))} placeholder="(555) 555-5555" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.email} type="email"
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={customer.email} type="email"
                   onChange={e => setCustomer(p => ({...p, email: e.target.value}))} placeholder="john@example.com" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-              <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" rows={3} value={customer.notes}
+              <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" rows={3} value={customer.notes}
                 onChange={e => setCustomer(p => ({...p, notes: e.target.value}))}
                 placeholder="Any notes about the customer..." />
             </div>
@@ -194,7 +194,7 @@ export default function NewAppointmentForm() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Year <span className="text-red-500">*</span></label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={vehicle.year}
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={vehicle.year}
                   onChange={e => setVehicle(p => ({...p, year: e.target.value}))}>
                   {Array.from({length: 26}, (_, i) => new Date().getFullYear() + 1 - i).map(y => (
                     <option key={y} value={y}>{y}</option>
@@ -203,31 +203,31 @@ export default function NewAppointmentForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Make <span className="text-red-500">*</span></label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" list="makes-list" value={vehicle.make}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" list="makes-list" value={vehicle.make}
                   onChange={e => setVehicle(p => ({...p, make: e.target.value}))} placeholder="Toyota" />
                 <datalist id="makes-list">{MAKES.map(m => <option key={m} value={m} />)}</datalist>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Model <span className="text-red-500">*</span></label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={vehicle.model}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={vehicle.model}
                   onChange={e => setVehicle(p => ({...p, model: e.target.value}))} placeholder="Camry" />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Trim</label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={vehicle.trim}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={vehicle.trim}
                   onChange={e => setVehicle(p => ({...p, trim: e.target.value}))} placeholder="XLE" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Color</label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" list="colors-list" value={vehicle.color}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" list="colors-list" value={vehicle.color}
                   onChange={e => setVehicle(p => ({...p, color: e.target.value}))} placeholder="Silver" />
                 <datalist id="colors-list">{COLORS_LIST.map(c => <option key={c} value={c} />)}</datalist>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Mileage</label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" type="number" value={vehicle.mileage}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" type="number" value={vehicle.mileage}
                   onChange={e => setVehicle(p => ({...p, mileage: e.target.value}))} placeholder="45000" />
               </div>
             </div>
@@ -235,13 +235,13 @@ export default function NewAppointmentForm() {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 VIN <span className="text-slate-400 font-normal">(optional — helps with valuation)</span>
               </label>
-              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors font-mono" value={vehicle.vin}
+              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors font-mono" value={vehicle.vin}
                 onChange={e => setVehicle(p => ({...p, vin: e.target.value.toUpperCase()}))}
                 placeholder="1HGBH41JXMN109186" maxLength={17} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Condition Notes</label>
-              <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" rows={3} value={vehicle.condition_notes}
+              <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" rows={3} value={vehicle.condition_notes}
                 onChange={e => setVehicle(p => ({...p, condition_notes: e.target.value}))}
                 placeholder="Dents, scratches, accidents, modifications, etc." />
             </div>
@@ -254,37 +254,37 @@ export default function NewAppointmentForm() {
             <h2 className="text-lg font-semibold text-[#1a1a2e]">Schedule</h2>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Street Address <span className="text-red-500">*</span></label>
-              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.address}
+              <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.address}
                 onChange={e => setAppt(p => ({...p, address: e.target.value}))} placeholder="123 Main Street" />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-1">
                 <label className="block text-sm font-medium text-slate-700 mb-1">City <span className="text-red-500">*</span></label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.city}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.city}
                   onChange={e => setAppt(p => ({...p, city: e.target.value}))} placeholder="Dayton" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">State</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.state}
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.state}
                   onChange={e => setAppt(p => ({...p, state: e.target.value}))}>
                   {['OH','IN','KY','IL','MI'].map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">ZIP</label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.zip}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.zip}
                   onChange={e => setAppt(p => ({...p, zip: e.target.value}))} placeholder="45402" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Date <span className="text-red-500">*</span></label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" type="date" value={appt.date}
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" type="date" value={appt.date}
                   onChange={e => setAppt(p => ({...p, date: e.target.value}))} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Time <span className="text-red-500">*</span></label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.time}
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" value={appt.time}
                   onChange={e => setAppt(p => ({...p, time: e.target.value}))}>
                   {TIMES.map(t => <option key={t} value={t}>{formatTime(t)}</option>)}
                 </select>
@@ -330,7 +330,7 @@ export default function NewAppointmentForm() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Scheduled By (VAS)</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] bg-white"
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] bg-white"
                   value={appt.vas_rep} onChange={e => setAppt(p => ({...p, vas_rep: e.target.value}))}>
                   <option value="">— Select —</option>
                   <option value="Bianka">Bianka</option>
@@ -340,7 +340,7 @@ export default function NewAppointmentForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Lead Source</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] bg-white"
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] bg-white"
                   value={appt.lead_source} onChange={e => setAppt(p => ({...p, lead_source: e.target.value}))}>
                   <option value="">— Select —</option>
                   <option value="Facebook">Facebook</option>
@@ -356,7 +356,7 @@ export default function NewAppointmentForm() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-              <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" rows={2} value={appt.notes}
+              <textarea className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-orange-100 bg-white transition-colors" rows={2} value={appt.notes}
                 onChange={e => setAppt(p => ({...p, notes: e.target.value}))}
                 placeholder="Gate code, parking instructions, etc." />
             </div>

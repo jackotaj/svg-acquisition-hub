@@ -33,8 +33,17 @@ export async function GET(request: NextRequest) {
   } else if (date === 'upcoming') {
     const today = new Date().toISOString().split('T')[0];
     query = query.gte('scheduled_date', today).not('status', 'in', '("cancelled","completed")');
+  } else if (date === 'past') {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.lt('scheduled_date', today).order('scheduled_date', { ascending: false });
   } else if (date) {
     query = query.eq('scheduled_date', date);
+  }
+
+  // Filter out cancelled/lost unless explicitly requested
+  const includeCancelled = request.nextUrl.searchParams.get('include_cancelled') === 'true';
+  if (!includeCancelled && date !== 'past') {
+    query = query.not('status', 'in', '("cancelled")').not('outcome', 'in', '("lost")');
   }
 
   const { data, error } = await query;

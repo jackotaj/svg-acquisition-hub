@@ -177,7 +177,7 @@ export default function VasNewPage() {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">VAS Rep <span className="text-red-500">*</span></label>
               <select value={form.vas_rep} onChange={e => set('vas_rep', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange">
                 <option value="">Select rep</option>
                 {VAS_REPS.map(r => <option key={r}>{r}</option>)}
               </select>
@@ -185,7 +185,7 @@ export default function VasNewPage() {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Lead Source</label>
               <select value={form.lead_source} onChange={e => set('lead_source', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange">
                 <option value="">Select source</option>
                 {LEAD_SOURCES.map(s => <option key={s}>{s}</option>)}
               </select>
@@ -200,19 +200,19 @@ export default function VasNewPage() {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">First Name <span className="text-red-500">*</span></label>
               <input value={form.first_name} onChange={e => set('first_name', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="First" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Last Name</label>
               <input value={form.last_name} onChange={e => set('last_name', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="Last" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Phone</label>
               <input value={form.phone} onChange={e => set('phone', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="(937) 555-0000" />
             </div>
           </div>
@@ -225,19 +225,19 @@ export default function VasNewPage() {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Year</label>
               <input value={form.vehicle_year} onChange={e => set('vehicle_year', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="2019" maxLength={4} />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Make <span className="text-red-500">*</span></label>
               <input value={form.vehicle_make} onChange={e => set('vehicle_make', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="Toyota" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Model</label>
               <input value={form.vehicle_model} onChange={e => set('vehicle_model', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="Highlander" />
             </div>
           </div>
@@ -245,13 +245,13 @@ export default function VasNewPage() {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Mileage</label>
               <input value={form.mileage} onChange={e => set('mileage', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="87,500" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Condition</label>
               <select value={form.condition} onChange={e => set('condition', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange">
                 <option value="">Select condition</option>
                 {CONDITIONS.map(c => <option key={c}>{c}</option>)}
               </select>
@@ -266,18 +266,18 @@ export default function VasNewPage() {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Date <span className="text-red-500">*</span></label>
               <input type="date" value={form.scheduled_date} onChange={e => set('scheduled_date', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Time</label>
               <input type="time" value={form.scheduled_time} onChange={e => set('scheduled_time', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange" />
             </div>
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Location / Address</label>
             <input value={form.address} onChange={e => set('address', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
               placeholder="SVG Beavercreek or 123 Main St, Dayton OH" />
           </div>
         </div>
@@ -289,14 +289,14 @@ export default function VasNewPage() {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Result</label>
               <select value={form.outcome} onChange={e => set('outcome', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange">
                 {OUTCOMES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Offer Amount Made</label>
               <input value={form.offer_amount} onChange={e => set('offer_amount', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="$0 — what we offered" />
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function VasNewPage() {
             <div className="mb-4">
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Purchase Price (Final)</label>
               <input value={form.purchase_amount} onChange={e => set('purchase_amount', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange"
                 placeholder="$0" />
             </div>
           )}
@@ -312,7 +312,7 @@ export default function VasNewPage() {
             <div className="mb-4">
               <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Why Did They Say No? <span className="text-orange">*</span></label>
               <select value={form.lost_reason} onChange={e => set('lost_reason', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange">
                 <option value="">Select reason (important!)</option>
                 {LOST_REASONS.map(r => <option key={r}>{r}</option>)}
               </select>
@@ -322,7 +322,7 @@ export default function VasNewPage() {
           <div className="mt-4">
             <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Notes</label>
             <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange resize-none"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange resize-none"
               placeholder="Anything worth noting..." />
           </div>
         </div>

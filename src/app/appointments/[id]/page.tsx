@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Phone, Mail, MapPin, Clock, Car, User, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, MapPin, Clock, Car, User, CheckCircle, Pencil, X } from 'lucide-react';
 
 const BASE_LAT = 39.7174;
 const BASE_LNG = -84.0639;
@@ -152,6 +152,14 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
   const [updating, setUpdating] = useState(false);
   const [offerInput, setOfferInput] = useState('');
   const [appraisalNotes, setAppraisalNotes] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editState, setEditState] = useState('');
+  const [editZip, setEditZip] = useState('');
 
   const fetchAppt = () => {
     fetch(`/api/appointments/${id}`)
@@ -194,6 +202,38 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
     setUpdating(false);
   };
 
+  const startEditing = () => {
+    if (!appt) return;
+    setEditDate(appt.scheduled_date);
+    setEditTime(appt.scheduled_time.slice(0, 5));
+    setEditNotes(appt.notes || '');
+    setEditAddress(appt.address || '');
+    setEditCity(appt.city || '');
+    setEditState(appt.state || '');
+    setEditZip(appt.zip || '');
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    setUpdating(true);
+    await fetch(`/api/appointments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        scheduled_date: editDate,
+        scheduled_time: editTime,
+        notes: editNotes || null,
+        address: editAddress,
+        city: editCity,
+        state: editState,
+        zip: editZip,
+      }),
+    });
+    setEditing(false);
+    fetchAppt();
+    setUpdating(false);
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
       <div className="text-slate-400">Loading…</div>
@@ -221,9 +261,20 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
           <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" /> Dashboard
           </Link>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[appt.status] || 'bg-slate-100 text-slate-500'}`}>
-            {STATUS_LABELS[appt.status] || appt.status}
-          </span>
+          <div className="flex items-center gap-2">
+            {!editing ? (
+              <button onClick={startEditing} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white hover:bg-white/20 transition-colors">
+                <Pencil className="w-3 h-3" /> Edit
+              </button>
+            ) : (
+              <button onClick={() => setEditing(false)} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white hover:bg-white/20 transition-colors">
+                <X className="w-3 h-3" /> Cancel
+              </button>
+            )}
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[appt.status] || 'bg-slate-100 text-slate-500'}`}>
+              {STATUS_LABELS[appt.status] || appt.status}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -309,6 +360,59 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
 
+        {/* Edit Form */}
+        {editing && (
+          <div className="bg-white rounded-xl border border-orange-200 shadow-sm p-5">
+            <div className="text-sm font-semibold text-slate-700 mb-3">Edit Appointment</div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Date</label>
+                  <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Time</label>
+                  <input type="time" value={editTime} onChange={e => setEditTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Address</label>
+                <input type="text" value={editAddress} onChange={e => setEditAddress(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">City</label>
+                  <input type="text" value={editCity} onChange={e => setEditCity(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">State</label>
+                  <input type="text" value={editState} onChange={e => setEditState(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">ZIP</label>
+                  <input type="text" value={editZip} onChange={e => setEditZip(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Notes</label>
+                <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={3}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] resize-none"
+                  placeholder="Appointment notes…" />
+              </div>
+              <button onClick={saveEdit} disabled={updating}
+                className="w-full py-2.5 bg-[#f97316] hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+                {updating ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Route Map */}
         {appt.address && (
           <RouteMapCard appt={appt} />
@@ -355,7 +459,7 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Notes</label>
               <textarea
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316] resize-none"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316] resize-none"
                 rows={3}
                 value={appraisalNotes}
                 onChange={e => setAppraisalNotes(e.target.value)}
@@ -366,7 +470,7 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
                 <input
-                  className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316]"
+                  className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]"
                   value={offerInput}
                   onChange={e => setOfferInput(e.target.value)}
                   placeholder="0" />

@@ -61,6 +61,10 @@ body {
   font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
 }
 
+input, textarea, select {
+  color: #111111;
+}
+
 /* Semantic card utility */
 .card {
   background: var(--card);

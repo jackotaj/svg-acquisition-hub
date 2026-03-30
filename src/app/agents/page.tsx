@@ -187,7 +187,7 @@ export default function AgentsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Name <span className="text-red-500">*</span></label>
-                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316]"
+                <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]"
                   value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))}
                   placeholder="e.g. John Smith" />
               </div>
@@ -195,13 +195,13 @@ export default function AgentsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                  <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316]"
+                  <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]"
                     value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))}
                     placeholder="(555) 555-5555" type="tel" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                  <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-[#f97316]"
+                  <input className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-gray-900 outline-none focus:border-[#f97316]"
                     value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))}
                     placeholder="agent@svgmotors.com" type="email" />
                 </div>
