@@ -4,7 +4,12 @@
  * Spreadsheet ID: 1TOoTsmLHOEMsKHrfofS99-SU_7rh_i0EJbvDONpFRBI
  */
 
-const SPREADSHEET_ID = '1TOoTsmLHOEMsKHrfofS99-SU_7rh_i0EJbvDONpFRBI';
+const SPREADSHEET_CONFIGS = [
+  { id: '1TOoTsmLHOEMsKHrfofS99-SU_7rh_i0EJbvDONpFRBI', label: 'March2026' },
+  { id: '1dR8K2lijXjDdiO_s_JZbpa3a67VUEMFSvMQILHbR_ik', label: 'April2026' },
+];
+// Default to April for new writes
+const SPREADSHEET_ID = SPREADSHEET_CONFIGS[1].id;
 
 // Tabs that are NOT VAS rep tabs (skip during sync)
 const SKIP_TABS = ['Table Template', 'Sheet1', 'Overview', 'Summary', 'Instructions', 'README'];
@@ -15,20 +20,20 @@ const SKIP_TABS = ['Table Template', 'Sheet1', 'Overview', 'Summary', 'Instructi
  */
 let _tabsCache: { tabs: string[]; ts: number } | null = null;
 
-export async function getSheetTabs(forceRefresh = false): Promise<string[]> {
-  if (!forceRefresh && _tabsCache && Date.now() - _tabsCache.ts < 60_000) {
+export async function getSheetTabs(forceRefresh = false, spreadsheetId = SPREADSHEET_ID): Promise<string[]> {
+  if (!forceRefresh && _tabsCache && Date.now() - _tabsCache.ts < 60_000 && spreadsheetId === SPREADSHEET_ID) {
     return _tabsCache.tabs;
   }
   const token = await getAccessToken();
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties.title`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await res.json();
   const tabs: string[] = (data.sheets || [])
     .map((s: { properties: { title: string } }) => s.properties.title)
     .filter((t: string) => !SKIP_TABS.some(skip => t.toLowerCase() === skip.toLowerCase()));
-  _tabsCache = { tabs, ts: Date.now() };
+  if (spreadsheetId === SPREADSHEET_ID) _tabsCache = { tabs, ts: Date.now() };
   return tabs;
 }
 
@@ -248,24 +253,27 @@ export async function fullResync(appts: Record<string, any>[]) {
  */
 export async function readAllSheetRows(): Promise<Record<string, string>[]> {
   const token = await getAccessToken();
-  const tabs = await getSheetTabs(true); // force-refresh to catch new tabs
   const allRows: Record<string, string>[] = [];
 
-  for (const tab of tabs) {
-    const res = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(tab)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const data = await res.json();
-    const rows: string[][] = data.values || [];
-    if (rows.length < 2) continue;
+  for (const config of SPREADSHEET_CONFIGS) {
+    const tabs = await getSheetTabs(true, config.id);
 
-    for (let i = 1; i < rows.length; i++) {
-      const row: Record<string, string> = {};
-      for (let j = 0; j < COLUMNS.length; j++) {
-        row[COLUMNS[j]] = rows[i]?.[j] || '';
+    for (const tab of tabs) {
+      const res = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${config.id}/values/${encodeURIComponent(tab)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      const rows: string[][] = data.values || [];
+      if (rows.length < 2) continue;
+
+      for (let i = 1; i < rows.length; i++) {
+        const row: Record<string, string> = {};
+        for (let j = 0; j < COLUMNS.length; j++) {
+          row[COLUMNS[j]] = rows[i]?.[j] || '';
+        }
+        if (row.id) allRows.push(row);
       }
-      if (row.id) allRows.push(row);
     }
   }
   return allRows;
