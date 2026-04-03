@@ -7,38 +7,47 @@ import { ArrowLeft, Phone, Mail, MapPin, Clock, Car, User, CheckCircle, Pencil, 
 const BASE_LAT = 39.7174;
 const BASE_LNG = -84.0639;
 
+const BASE_OSM_SRC = `https://www.openstreetmap.org/export/embed.html?bbox=-84.1239,39.6974,-84.0039,39.7374&layer=mapnik&marker=39.7174,-84.0639`;
+
 function RouteMapCard({ appt }: {
   appt: { id: string; address: string; city?: string; state?: string; zip?: string; lat?: number | null; lng?: number | null }
 }) {
+  const hasRealAddress = appt.address && appt.address !== 'TBD' && appt.address.trim().length > 3;
+
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     appt.lat && appt.lng ? { lat: appt.lat, lng: appt.lng } : null
   );
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(appt.lat && appt.lng ? 'ready' : 'loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'base-only'>(
+    !hasRealAddress ? 'base-only' :
+    (appt.lat && appt.lng ? 'ready' : 'loading')
+  );
 
   const fullAddress = [appt.address, appt.city, appt.state, appt.zip].filter(Boolean).join(', ');
-  const gmapsUrl = `https://www.google.com/maps/dir/3415+Seajay+Dr,+Beavercreek,+OH+45430/${encodeURIComponent(fullAddress)}`;
+  const gmapsBase = 'https://www.google.com/maps/dir/3415+Seajay+Dr,+Beavercreek,+OH+45430';
+  const gmapsUrl = hasRealAddress
+    ? `${gmapsBase}/${encodeURIComponent(fullAddress)}`
+    : `https://www.google.com/maps/search/?api=1&query=3415+Seajay+Dr+Beavercreek+OH`;
 
   useEffect(() => {
-    if (coords) return;
+    if (!hasRealAddress || coords) return;
     fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=us`,
       { headers: { 'Accept-Language': 'en', 'User-Agent': 'SVGAcquisitionHub/1.0' } }
     )
       .then(r => r.json())
       .then(data => {
-        if (!data[0]) { setStatus('error'); return; }
+        if (!data[0]) { setStatus('base-only'); return; }
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
         setCoords({ lat, lng });
         setStatus('ready');
-        // Save coords back to DB so next load is instant
         fetch(`/api/appointments/${appt.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lat, lng }),
         }).catch(() => {});
       })
-      .catch(() => setStatus('error'));
+      .catch(() => setStatus('base-only'));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -55,11 +64,12 @@ function RouteMapCard({ appt }: {
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
         <div className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-[#f97316]" /> Location
+          <MapPin className="w-4 h-4 text-[#f97316]" />
+          {hasRealAddress ? 'Location' : 'Base — SVG Dayton HQ'}
         </div>
         <a href={gmapsUrl} target="_blank" rel="noopener noreferrer"
           className="text-xs text-[#f97316] hover:underline">
-          Get Directions ↗
+          {hasRealAddress ? 'Get Directions ↗' : 'View Base ↗'}
         </a>
       </div>
       {status === 'loading' && (
@@ -71,13 +81,15 @@ function RouteMapCard({ appt }: {
         <iframe title="Map" src={osmSrc} width="100%" height="220"
           style={{ border: 0, display: 'block' }} loading="lazy" />
       )}
-      {status === 'error' && (
-        <div className="h-[220px] flex flex-col items-center justify-center gap-3">
-          <p className="text-sm text-slate-400">Couldn&apos;t locate address — open in Maps instead</p>
-          <a href={gmapsUrl} target="_blank" rel="noopener noreferrer"
-            className="px-4 py-2 bg-[#f97316] text-white rounded-lg text-sm font-medium">
-            Get Directions in Google Maps ↗
-          </a>
+      {status === 'base-only' && (
+        <div className="relative">
+          <iframe title="Base Map" src={BASE_OSM_SRC} width="100%" height="220"
+            style={{ border: 0, display: 'block' }} loading="lazy" />
+          {!hasRealAddress && (
+            <div className="absolute bottom-2 left-2 bg-white/90 rounded-lg px-2 py-1 text-xs text-slate-500 shadow">
+              Seller address TBD — update appointment to see route
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -263,11 +275,11 @@ export default function AppointmentDetailPage({ params }: { params: Promise<{ id
           </Link>
           <div className="flex items-center gap-2">
             {!editing ? (
-              <button onClick={startEditing} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white hover:bg-white/20 transition-colors">
+              <button onClick={startEditing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#1a1a2e] hover:bg-slate-100 transition-colors shadow-sm">
                 <Pencil className="w-3 h-3" /> Edit
               </button>
             ) : (
-              <button onClick={() => setEditing(false)} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white hover:bg-white/20 transition-colors">
+              <button onClick={() => setEditing(false)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/20 text-white hover:bg-white/30 transition-colors">
                 <X className="w-3 h-3" /> Cancel
               </button>
             )}

@@ -194,7 +194,7 @@ export default function DayPage() {
       ) : (
         <>
           {/* Day summary bar */}
-          <div className="bg-navy text-white rounded-xl px-5 py-4 mb-5 flex flex-wrap gap-4 items-center justify-between">
+          <div className="bg-navy text-white rounded-xl px-5 py-4 mb-5 flex flex-wrap gap-4 items-center justify-between" id="day-summary">
             <div>
               <div className="text-xs text-blue-200 font-medium uppercase tracking-wide">{agentObj?.name}</div>
               <div className="font-semibold text-lg">{dateLabel}</div>
@@ -217,6 +217,16 @@ export default function DayPage() {
                 <div className="text-xs text-blue-200">Est. done</div>
               </div>
             </div>
+          </div>
+
+          {/* Add appointment button */}
+          <div className="flex justify-end mb-4">
+            <Link
+              href={`/appointments/new?agent=${selectedAgent}&date=${selectedDate}`}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#f97316] text-white text-sm font-semibold shadow hover:bg-orange-600 transition-colors"
+            >
+              + Add Appointment
+            </Link>
           </div>
 
           {/* Timeline */}
