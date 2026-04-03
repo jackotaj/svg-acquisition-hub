@@ -9,8 +9,12 @@ export async function GET() {
   const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
   const weekStartStr = weekStart.toISOString().split('T')[0];
 
+  const nextWeek = new Date(now); nextWeek.setDate(now.getDate() + 7);
+  const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
   const [todayRes, monthRes, weekRes, recentRes] = await Promise.all([
-    supabaseAdmin.from('acq_appointments').select('id, status, outcome, scheduled_time, vas_rep, customer:acq_customers(first_name, last_name), vehicle:acq_vehicles(year, make, model), agent:acq_agents(name, color_hex)').eq('scheduled_date', today).order('scheduled_time'),
+    // Show today + upcoming 7 days so the dashboard is never empty
+    supabaseAdmin.from('acq_appointments').select('id, status, outcome, scheduled_time, scheduled_date, vas_rep, customer:acq_customers(first_name, last_name), vehicle:acq_vehicles(year, make, model), agent:acq_agents(name, color_hex)').gte('scheduled_date', today).lte('scheduled_date', nextWeekStr).not('status','eq','cancelled').order('scheduled_date').order('scheduled_time'),
     supabaseAdmin.from('acq_appointments').select('id, outcome, purchase_amount, vas_rep').gte('scheduled_date', monthStart),
     supabaseAdmin.from('acq_appointments').select('id').gte('scheduled_date', weekStartStr),
     supabaseAdmin.from('acq_appointments').select('id, scheduled_date, scheduled_time, outcome, purchase_amount, vas_rep, customer:acq_customers(first_name, last_name), vehicle:acq_vehicles(year, make, model)').order('scheduled_date', { ascending: false }).order('scheduled_time', { ascending: false }).limit(8),
@@ -36,7 +40,8 @@ export async function GET() {
   // VAS rep goals
   const vasReps = ['Bianka', 'David'];
   const vasGoals = vasReps.map(rep => {
-    const repAppts = monthAppts.filter(a => a.vas_rep === rep);
+    // Case-insensitive match to handle DAVID vs David
+    const repAppts = monthAppts.filter(a => a.vas_rep?.toLowerCase() === rep.toLowerCase());
     const purchased = repAppts.filter(a => a.outcome === 'purchased').length;
     return { rep, total: repAppts.length, purchased, goalPct: Math.min(100, Math.round((purchased / 20) * 100)) };
   });

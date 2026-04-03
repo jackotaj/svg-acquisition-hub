@@ -42,11 +42,19 @@ export async function GET(request: NextRequest) {
 
   const appts = data || [];
 
-  // Group by rep
+  // Group by rep — normalize casing (DAVID → David) and skip empty/null
+  function normalizeName(s: string | null | undefined): string {
+    if (!s || !s.trim()) return ''
+    const t = s.trim()
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+  }
+
   const repMap: Record<string, typeof appts> = {};
   for (const a of appts) {
-    if (!repMap[a.vas_rep!]) repMap[a.vas_rep!] = [];
-    repMap[a.vas_rep!].push(a);
+    const key = normalizeName(a.vas_rep)
+    if (!key) continue
+    if (!repMap[key]) repMap[key] = [];
+    repMap[key].push(a);
   }
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
