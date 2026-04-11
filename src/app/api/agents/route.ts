@@ -10,7 +10,7 @@ export async function GET() {
     .from('curb_users')
     .select('*')
     .eq('tenant_id', SVG_TENANT_ID)
-    .eq('role', 'agent')
+    .in('role', ['agent', 'driver'])
     .eq('active', true)
     .order('first_name');
 
