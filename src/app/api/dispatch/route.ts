@@ -1,9 +1,8 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getCurbSupabase, SVG_TENANT_ID } from '@/lib/curb-supabase';
 import { BASE_LOCATION } from '@/lib/types';
 
-// Haversine distance in miles
 function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 3959;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -12,7 +11,6 @@ function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number):
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Drive time estimate: haversine * 1.35 road factor, 28mph avg city speed
 function estimateDriveMins(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const miles = haversineMiles(lat1, lng1, lat2, lng2) * 1.35;
   return Math.max(5, Math.ceil((miles / 28) * 60));
@@ -20,33 +18,43 @@ function estimateDriveMins(lat1: number, lng1: number, lat2: number, lng2: numbe
 
 export async function GET(request: NextRequest) {
   try {
+    const curb = getCurbSupabase();
     const date = request.nextUrl.searchParams.get('date') || new Date().toISOString().split('T')[0];
 
-    const { data: appts, error } = await supabaseAdmin
-      .from('acq_appointments')
+    const { data: appts, error } = await curb
+      .from('curb_appointments')
       .select(`
         id, scheduled_time, status, outcome, lat, lng, address,
-        customer:acq_customers(first_name, last_name),
-        vehicle:acq_vehicles(year, make, model),
-        agent:acq_agents(id, name, color_hex)
+        seller:curb_sellers(first_name, last_name),
+        lead:curb_leads(year, make, model),
+        agent:curb_users(id, first_name, last_name, color_hex)
       `)
+      .eq('tenant_id', SVG_TENANT_ID)
       .eq('scheduled_date', date)
-      .neq('status', 'cancelled')
+      .neq('status', 'canceled')
       .order('scheduled_time');
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    // Shape for frontend compatibility
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const shaped = (appts || []).map((a: any) => ({
+      ...a,
+      customer: a.seller ? { first_name: a.seller.first_name, last_name: a.seller.last_name } : null,
+      vehicle: a.lead ? { year: a.lead.year, make: a.lead.make, model: a.lead.model } : null,
+      agent: a.agent ? { id: a.agent.id, name: `${a.agent.first_name} ${a.agent.last_name}`.trim(), color_hex: a.agent.color_hex } : null,
+    }));
+
     // Group by agent
     const agentMap: Record<string, {
       agent: { id: string; name: string; color_hex: string };
-      stops: typeof appts;
+      stops: typeof shaped;
     }> = {};
 
-    for (const a of (appts || [])) {
-      const agent = Array.isArray(a.agent) ? a.agent[0] : a.agent as { id: string; name: string; color_hex: string } | null;
-      if (!agent?.id) continue;
-      if (!agentMap[agent.id]) agentMap[agent.id] = { agent, stops: [] };
-      agentMap[agent.id].stops.push(a);
+    for (const a of shaped) {
+      if (!a.agent?.id) continue;
+      if (!agentMap[a.agent.id]) agentMap[a.agent.id] = { agent: a.agent, stops: [] };
+      agentMap[a.agent.id].stops.push(a);
     }
 
     const APPRAISAL_MINS = 45;
@@ -61,7 +69,7 @@ export async function GET(request: NextRequest) {
         conflict?: boolean;
       }> = [];
 
-      let cursor = 480; // 8:00 AM
+      let cursor = 480;
       let prevLat = BASE_LOCATION.lat;
       let prevLng = BASE_LOCATION.lng;
       const conflicts: string[] = [];
@@ -69,9 +77,7 @@ export async function GET(request: NextRequest) {
       for (const stop of stops) {
         const timeParts = stop.scheduled_time.split(':');
         const scheduledMins = parseInt(timeParts[0]) * 60 + parseInt(timeParts[1]);
-        const appraisalMins = APPRAISAL_MINS;
 
-        // Drive time estimate
         const toLat = stop.lat ?? prevLat;
         const toLng = stop.lng ?? prevLng;
         const driveTime = estimateDriveMins(prevLat, prevLng, toLat, toLng);
@@ -87,14 +93,13 @@ export async function GET(request: NextRequest) {
         }
 
         timeline.push({ type: 'drive', startMin: driveStart, endMin: driveEnd, label: `Drive ~${driveTime}min` });
-        timeline.push({ type: 'appraise', startMin: actualStart, endMin: actualStart + appraisalMins, label: 'Appraise', appt: stop, conflict });
+        timeline.push({ type: 'appraise', startMin: actualStart, endMin: actualStart + APPRAISAL_MINS, label: 'Appraise', appt: stop, conflict });
 
-        cursor = actualStart + appraisalMins;
+        cursor = actualStart + APPRAISAL_MINS;
         prevLat = toLat;
         prevLng = toLng;
       }
 
-      // Return drive
       const returnDrive = stops.length > 0
         ? estimateDriveMins(prevLat, prevLng, BASE_LOCATION.lat, BASE_LOCATION.lng)
         : 0;

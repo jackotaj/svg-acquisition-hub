@@ -1,15 +1,16 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getCurbSupabase, SVG_TENANT_ID } from '@/lib/curb-supabase';
 
-function calcPoints(appts: { status: string; outcome: string | null; purchase_amount: number | null }[]) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function calcPoints(appts: any[]) {
   let pts = 0;
   for (const a of appts) {
-    pts += 10; // booked
-    if (['arrived', 'appraising', 'completed'].includes(a.status) && a.outcome !== 'no_show') pts += 20; // showed
+    pts += 10;
+    if (['on_site', 'completed'].includes(a.status) && a.outcome !== 'no_show') pts += 20;
     if (a.outcome === 'purchased') {
       pts += 100;
-      pts += Math.floor((a.purchase_amount || 0) / 1000);
+      pts += Math.floor((a.purchase_price || 0) / 1000);
     }
   }
   return pts;
@@ -23,6 +24,7 @@ function getLevel(pts: number) {
 }
 
 export async function GET(request: NextRequest) {
+  const curb = getCurbSupabase();
   const month = request.nextUrl.searchParams.get('month');
   const now = new Date();
   const targetMonth = month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -30,9 +32,12 @@ export async function GET(request: NextRequest) {
   const start = `${year}-${String(mon).padStart(2, '0')}-01`;
   const end = new Date(year, mon, 0).toISOString().split('T')[0];
 
-  const { data, error } = await supabaseAdmin
-    .from('acq_appointments')
-    .select('id, vas_rep, lead_source, status, outcome, purchase_amount, scheduled_date, customer:acq_customers(first_name, last_name), vehicle:acq_vehicles(year, make, model)')
+  const { data, error } = await curb
+    .from('curb_appointments')
+    .select(`id, vas_rep, lead_source, status, outcome, purchase_price, scheduled_date,
+      seller:curb_sellers(first_name, last_name),
+      lead:curb_leads(year, make, model)`)
+    .eq('tenant_id', SVG_TENANT_ID)
     .gte('scheduled_date', start)
     .lte('scheduled_date', end)
     .not('vas_rep', 'is', null)
@@ -40,19 +45,26 @@ export async function GET(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const appts = data || [];
+  // Shape for frontend compatibility
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const appts = (data || []).map((a: any) => ({
+    ...a,
+    purchase_amount: a.purchase_price,
+    customer: a.seller ? { first_name: a.seller.first_name, last_name: a.seller.last_name } : null,
+    vehicle: a.lead ? { year: a.lead.year, make: a.lead.make, model: a.lead.model } : null,
+  }));
 
-  // Group by rep — normalize casing (DAVID → David) and skip empty/null
   function normalizeName(s: string | null | undefined): string {
-    if (!s || !s.trim()) return ''
-    const t = s.trim()
-    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+    if (!s || !s.trim()) return '';
+    const t = s.trim();
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
   }
 
-  const repMap: Record<string, typeof appts> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const repMap: Record<string, any[]> = {};
   for (const a of appts) {
-    const key = normalizeName(a.vas_rep)
-    if (!key) continue
+    const key = normalizeName(a.vas_rep);
+    if (!key) continue;
     if (!repMap[key]) repMap[key] = [];
     repMap[key].push(a);
   }
@@ -61,14 +73,14 @@ export async function GET(request: NextRequest) {
 
   const reps = Object.entries(repMap).map(([name, list]) => {
     const total = list.length;
-    const showed   = list.filter(a => ['arrived','appraising','completed'].includes(a.status) && a.outcome !== 'no_show').length;
+    const showed   = list.filter(a => ['on_site', 'completed'].includes(a.status) && a.outcome !== 'no_show').length;
     const purchased = list.filter(a => a.outcome === 'purchased').length;
     const noPurchase = list.filter(a => a.outcome === 'no_purchase').length;
     const noShow   = list.filter(a => a.outcome === 'no_show').length;
-    const canceled  = list.filter(a => a.status === 'cancelled').length;
+    const canceled  = list.filter(a => a.status === 'canceled').length;
     const pending   = list.filter(a => a.outcome === 'pending').length;
 
-    const totalRevenue = list.filter(a => a.outcome === 'purchased').reduce((s, a) => s + (a.purchase_amount || 0), 0);
+    const totalRevenue = list.filter(a => a.outcome === 'purchased').reduce((s, a) => s + (a.purchase_price || 0), 0);
     const avgDeal = purchased > 0 ? Math.round(totalRevenue / purchased) : 0;
     const pts = calcPoints(list);
     const level = getLevel(pts);

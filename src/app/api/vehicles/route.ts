@@ -1,20 +1,42 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getCurbSupabase, SVG_TENANT_ID } from '@/lib/curb-supabase';
 
 export async function POST(request: NextRequest) {
+  const curb = getCurbSupabase();
   const body = await request.json();
-  const { data, error } = await supabaseAdmin
-    .from('acq_vehicles')
+
+  // In Curb, vehicles are tracked as leads
+  const { data, error } = await curb
+    .from('curb_leads')
     .insert({
-      customer_id: body.customer_id,
+      tenant_id: SVG_TENANT_ID,
+      seller_id: body.customer_id || null,
+      stage: 'sourced',
       year: body.year || null,
-      make: body.make,
+      make: body.make || null,
       model: body.model || null,
       mileage: body.mileage || null,
+      source: 'manual',
       condition: body.condition || null,
     })
-    .select().single();
+    .select()
+    .single();
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+
+  // Return in acq_vehicles shape
+  return NextResponse.json({
+    id: data.id,
+    customer_id: body.customer_id,
+    year: data.year,
+    make: data.make,
+    model: data.model,
+    trim: data.trim,
+    mileage: data.mileage,
+    vin: data.vin,
+    color: data.color,
+    condition_notes: null,
+    created_at: data.created_at,
+  });
 }
