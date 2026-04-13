@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, CalendarDays, MapPin, Plus, Users,
-  Menu, X, Trophy, BarChart3, Truck, Route,
+  Menu, X, Trophy, BarChart3, Truck, Route, Activity,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -17,6 +17,7 @@ const NAV = [
   { href: '/leaderboard', label: 'Leaderboard',        icon: Trophy },
   { href: '/analytics',   label: 'Analytics',          icon: BarChart3 },
   { href: '/agents',      label: 'Agents',             icon: Users },
+  { href: '/activity',    label: 'Activity Log',       icon: Activity },
 ];
 
 export default function Sidebar() {
