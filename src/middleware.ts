@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip API routes, static files, and Next.js internals
@@ -14,19 +17,40 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Fire-and-forget: log page view via internal API
-  const geo = request.geo || {};
-  const logUrl = new URL('/api/log-view', request.url);
-  logUrl.searchParams.set('path', pathname);
-  logUrl.searchParams.set('city', geo.city || '');
-  logUrl.searchParams.set('region', geo.region || '');
-  logUrl.searchParams.set('country', geo.country || '');
-  logUrl.searchParams.set('ip', request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '');
-  logUrl.searchParams.set('ua', request.headers.get('user-agent') || '');
-  logUrl.searchParams.set('ref', request.headers.get('referer') || '');
+  // Geo comes from Vercel headers in Next 15 (request.geo was removed)
+  const h = request.headers;
+  const city = h.get('x-vercel-ip-city');
+  const region = h.get('x-vercel-ip-country-region');
+  const country = h.get('x-vercel-ip-country');
+  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+  const userAgent = h.get('user-agent');
+  const referrer = h.get('referer');
 
-  // Non-blocking fetch — don't await
-  fetch(logUrl.toString()).catch(() => {});
+  // Direct Supabase REST write — awaited so it doesn't get dropped
+  if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/page_views`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          path: pathname,
+          city: city ? decodeURIComponent(city) : null,
+          region: region || null,
+          country: country || null,
+          ip,
+          user_agent: userAgent || null,
+          referrer: referrer || null,
+        }),
+      });
+    } catch {
+      // Don't block the page on a logging failure
+    }
+  }
 
   return NextResponse.next();
 }
