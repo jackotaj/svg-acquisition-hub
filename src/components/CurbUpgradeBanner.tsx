@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, ArrowRight, Sparkles, Zap, Shield, BarChart3 } from 'lucide-react';
+import { X, ArrowRight, Zap, Shield, BarChart3 } from 'lucide-react';
+import Image from 'next/image';
 
 const CURB_URL = 'https://app.curb.direct';
 const DISMISS_KEY = 'curb-upgrade-dismissed';
@@ -19,9 +20,9 @@ export function CurbTopBanner() {
 
   return (
     <div className="relative bg-gradient-to-r from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] text-white px-4 py-2.5 flex items-center justify-center gap-3 text-sm shadow-lg z-50">
-      <Sparkles size={15} className="text-purple-200 shrink-0" />
+      <Image src="/curb-logo.png" alt="Curb" width={60} height={24} className="shrink-0" />
       <span className="font-medium">
-        <span className="font-black">Curb</span> is here — the next-gen acquisition platform.
+        Try the all-new <span className="font-black">Curb</span> acquisition platform
       </span>
       <a
         href={CURB_URL}
@@ -80,12 +81,12 @@ export function CurbUpgradePopup() {
             <X size={20} />
           </button>
 
-          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-purple-100 mb-4">
-            <Sparkles size={12} /> NEW PLATFORM
+          <div className="flex justify-center mb-4">
+            <Image src="/curb-logo.png" alt="Curb" width={140} height={56} className="drop-shadow-lg" />
           </div>
 
           <h2 className="text-2xl font-black text-white leading-tight mb-2">
-            Meet <span className="text-purple-200">Curb</span>
+            Try the All-New Curb
           </h2>
           <p className="text-purple-100 text-sm leading-relaxed">
             Everything you love about Acquisition Hub, rebuilt from the ground up with powerful new tools.
