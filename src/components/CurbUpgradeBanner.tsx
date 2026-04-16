@@ -20,7 +20,7 @@ export function CurbTopBanner() {
 
   return (
     <div className="relative bg-gradient-to-r from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] text-white px-4 py-2.5 flex items-center justify-center gap-3 text-sm shadow-lg z-50">
-      <Image src="/curb-logo.png" alt="Curb" width={60} height={24} className="shrink-0" />
+      <Image src="/curb-logo.png" alt="Curb" width={60} height={24} className="shrink-0 brightness-0 invert" />
       <span className="font-medium">
         Try the all-new <span className="font-black">Curb</span> acquisition platform
       </span>
@@ -82,7 +82,7 @@ export function CurbUpgradePopup() {
           </button>
 
           <div className="flex justify-center mb-4">
-            <Image src="/curb-logo.png" alt="Curb" width={140} height={56} className="drop-shadow-lg" />
+            <Image src="/curb-logo.png" alt="Curb" width={140} height={56} className="drop-shadow-lg brightness-0 invert" />
           </div>
 
           <h2 className="text-2xl font-black text-white leading-tight mb-2">
