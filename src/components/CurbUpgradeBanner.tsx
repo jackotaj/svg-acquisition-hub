@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, ArrowRight, Sparkles, Zap, Shield, BarChart3 } from 'lucide-react';
 
-const CURB_URL = 'https://curb-platform.vercel.app';
+const CURB_URL = 'https://app.curb.direct';
 const DISMISS_KEY = 'curb-upgrade-dismissed';
 const POPUP_KEY = 'curb-upgrade-popup-seen';
 
