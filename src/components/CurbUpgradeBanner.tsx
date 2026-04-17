@@ -8,6 +8,27 @@ const CURB_URL = 'https://app.curb.direct';
 const DISMISS_KEY = 'curb-upgrade-dismissed';
 const POPUP_KEY = 'curb-upgrade-popup-seen';
 
+// Fire-and-forget click tracking that survives cross-origin navigation
+function trackClick(event: string) {
+  try {
+    const payload = JSON.stringify({ event });
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' });
+      navigator.sendBeacon('/api/log-click', blob);
+    } else {
+      // Fallback for older browsers
+      fetch('/api/log-click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {
+    // Never block navigation for tracking failures
+  }
+}
+
 // ── Persistent top banner ──────────────────────────────────
 export function CurbTopBanner() {
   const [dismissed, setDismissed] = useState(true);
@@ -28,12 +49,17 @@ export function CurbTopBanner() {
         href={CURB_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackClick('banner_cta')}
         className="inline-flex items-center gap-1 bg-white text-[#6d28d9] font-bold text-xs px-3 py-1 rounded-full hover:bg-purple-50 transition-colors shrink-0"
       >
         Try it now <ArrowRight size={12} />
       </a>
       <button
-        onClick={() => { localStorage.setItem(DISMISS_KEY, 'true'); setDismissed(true); }}
+        onClick={() => {
+          trackClick('banner_dismiss');
+          localStorage.setItem(DISMISS_KEY, 'true');
+          setDismissed(true);
+        }}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-200 hover:text-white transition-colors"
         aria-label="Dismiss"
       >
@@ -50,11 +76,15 @@ export function CurbUpgradePopup() {
   useEffect(() => {
     if (localStorage.getItem(POPUP_KEY) === 'true') return;
     // Show after a short delay so the page loads first
-    const t = setTimeout(() => setShow(true), 1500);
+    const t = setTimeout(() => {
+      setShow(true);
+      trackClick('popup_shown');
+    }, 1500);
     return () => clearTimeout(t);
   }, []);
 
   function dismiss() {
+    trackClick('popup_dismiss');
     localStorage.setItem(POPUP_KEY, 'true');
     setShow(false);
   }
@@ -130,6 +160,7 @@ export function CurbUpgradePopup() {
             href={CURB_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackClick('popup_cta')}
             className="block w-full text-center bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white font-bold text-sm py-3 rounded-xl hover:from-[#6d28d9] hover:to-[#5b21b6] transition-all shadow-lg shadow-purple-500/25"
           >
             Try Curb Now <ArrowRight size={14} className="inline ml-1" />
